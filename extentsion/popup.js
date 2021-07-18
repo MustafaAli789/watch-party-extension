@@ -18,18 +18,10 @@ validRoomInput = () => {
 }
 
 newRoomBtn.addEventListener('click', e => {
-    if (!validRoomInput()) return
-    chrome.storage.local.set({
-        page: "Main"
-    });
-    changePage('Main')
+    goToMainWithValidation()
 })
 joinRoomBtn.addEventListener('click', e => {
-    if (!validRoomInput()) return
-    chrome.storage.local.set({
-        page: "Main"
-    });
-    changePage('Main')
+    goToMainWithValidation()
 })
 backBtn.addEventListener('click', e => {
     chrome.storage.local.set({
@@ -37,6 +29,22 @@ backBtn.addEventListener('click', e => {
     });
     changePage('Start')
 })
+
+goToMainWithValidation = () => {
+    chrome.runtime.sendMessage({ 
+        message: "validate_video_elem_on_screen"
+    }, response => {
+        if (response.message === 'success') {
+            if (response.payload === true) {
+                if (!validRoomInput()) return
+                chrome.storage.local.set({
+                    page: "Main"
+                });
+                changePage('Main')
+            }
+        }
+    });
+}
 
 changePage = (page) => {
     if (page === 'Start') {

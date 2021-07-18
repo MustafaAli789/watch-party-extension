@@ -2,6 +2,8 @@ const newRoomBtn = document.getElementById("newRoomBtn")
 const joinRoomBtn = document.getElementById("joinRoomBtn")
 const backBtn = document.getElementById("backBtn")
 const roomNameInput = document.getElementById("roomInput")
+const errorMsg = document.querySelector(".error")
+
 let curActivePage = 'Start'
 
 //Initial open of popup
@@ -36,7 +38,14 @@ goToMainWithValidation = () => {
     }, response => {
         if (response.message === 'success') {
             if (response.payload === true) {
-                if (!validRoomInput()) return
+                if (!validRoomInput()) {
+                    errorMsg.classList.remove('hidden')
+                    errorMsg.innerHTML = 'Please enter a room/id'
+                    return
+                } else {
+                    errorMsg.classList.add('hidden')
+                    errorMsg.innerHTML = ''
+                }
                 chrome.storage.local.set({
                     page: "Main"
                 });

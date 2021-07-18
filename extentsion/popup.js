@@ -1,4 +1,5 @@
-const goToStartButton = document.getElementById("goToStartButton")
+const newRoomBtn = document.getElementById("newRoom")
+const joinRoomBtn = document.getElementById("joinRoom")
 let curActivePage = 'Start'
 
 //Initial open of popup
@@ -10,17 +11,20 @@ chrome.runtime.sendMessage({
     }
 });
 
-goToStartButton.addEventListener('click', e => {
+newRoomBtn.addEventListener('click', e => {
     if (curActivePage === 'Start') {
         chrome.storage.local.set({
             page: "Main"
         });
         changePage('Main')
-    } else if (curActivePage === 'Main') {
+    }
+})
+joinRoomBtn.addEventListener('click', e => {
+    if (curActivePage === 'Start') {
         chrome.storage.local.set({
-            page: "Start"
+            page: "Main"
         });
-        changePage('Start')
+        changePage('Main')
     }
 })
 

@@ -4,22 +4,27 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="popup.css">
     <title>Popout</title>
-    <style>
-        html, body {
-            width: 300px;
-            height: 300px;
-        }
-        .hidden{
-            display: none;
-        }
-    </style>
 </head>
 <body>
+    <div class="head">
+		<img src="./images/icon-128x128.png">
+		<h1><span class="name" >Watch</span> Party</h1>
+	</div>
+    <div class="header_divider_container">
+		<div class="header_divider orange"></div>
+		<div class="header_divider red" style="margin: 0 10px;"></div>
+		<div class="header_divider blue"></div>
+	</div>
     
     <div id="startPage">
-        Menu Page
-        <button id="goToStartButton">Go to Start</button>
+        <div class="addItemContainer">
+            <input type="text" name="userInput" placeholder="Enter room name or id!">
+            <button id="newRoom" class="greenButton">New Room</button>
+            <button id="joinRoom" class="orangeButton">Join Room</button>
+        </div>
     </div>
 
     <div id="mainPage">

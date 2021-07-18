@@ -1,0 +1,84 @@
+html, body {
+    width: 320px;
+    height: fit-content;
+    background-color: #bef1ed;
+}
+.hidden{
+    display: none;
+}
+.head{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+h1{
+    padding: 0 10px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    color: #525252;
+}
+.head img{
+    height: 45px;
+    width: 45px;
+}
+.head h1{
+    margin-left: 20px;
+}
+.name{
+    color: white;
+}
+.header_divider_container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.header_divider{
+    height: 5px;
+    width: 80px;
+}
+.red{
+    background-color: red;
+}
+.orange{
+    background-color: orange;
+}
+.blue{
+    background-color: #0066b3;
+}
+.greenButton{
+    background-color: #63b931;
+}
+.orangeButton{
+    background-color: #d0af25;
+}
+.addItemContainer input{
+    width: 300px;
+    height: 30px;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 15px;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Roboto', sans-serif;
+}
+.addItemContainer button{
+    margin-top: 5px;
+    width: 300px;
+    height: 30px;
+    border: none;
+    border-radius: 3px;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 900;
+    font-size: 17px;
+    transition: background-color 1s;
+}
+#newRoom:hover{
+    background-color: green;
+    cursor: pointer;
+}
+#joinRoom:hover{
+    background-color: #ad911f;
+    cursor: pointer;
+}

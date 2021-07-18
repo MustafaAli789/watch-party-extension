@@ -1,6 +1,7 @@
 const newRoomBtn = document.getElementById("newRoomBtn")
 const joinRoomBtn = document.getElementById("joinRoomBtn")
 const backBtn = document.getElementById("backBtn")
+const roomNameInput = document.getElementById("roomInput")
 let curActivePage = 'Start'
 
 //Initial open of popup
@@ -12,13 +13,19 @@ chrome.runtime.sendMessage({
     }
 });
 
+validRoomInput = () => {
+    return roomNameInput.value.trim() != ""
+}
+
 newRoomBtn.addEventListener('click', e => {
+    if (!validRoomInput()) return
     chrome.storage.local.set({
         page: "Main"
     });
     changePage('Main')
 })
 joinRoomBtn.addEventListener('click', e => {
+    if (!validRoomInput()) return
     chrome.storage.local.set({
         page: "Main"
     });
@@ -36,6 +43,7 @@ changePage = (page) => {
         curActivePage = 'Start'
         document.getElementById("startPage").classList.remove('hidden')
         document.getElementById("mainPage").classList.add('hidden')
+        roomNameInput.value = ""
     } else if (page === 'Main') {
         curActivePage = 'Main'
         document.getElementById("startPage").classList.add('hidden')

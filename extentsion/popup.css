@@ -43,7 +43,7 @@ h1{
     background-color: orange;
 }
 .blue{
-    background-color: #0066b3;
+    background-color: #63c1e6;
 }
 .greenButton{
     background-color: #63b931;
@@ -62,7 +62,7 @@ h1{
     border-radius: 3px;
     font-family: 'Roboto', sans-serif;
 }
-.addItemContainer button{
+.styledButton{
     margin-top: 5px;
     width: 300px;
     height: 30px;
@@ -74,11 +74,15 @@ h1{
     font-size: 17px;
     transition: background-color 1s;
 }
-#newRoom:hover{
+#newRoomBtn:hover{
     background-color: green;
     cursor: pointer;
 }
-#joinRoom:hover{
+#joinRoomBtn:hover{
     background-color: #ad911f;
+    cursor: pointer;
+}
+#backBtn:hover{
+    background-color: #4888a1;
     cursor: pointer;
 }

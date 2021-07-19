@@ -51,6 +51,8 @@ goToMainWithValidation = () => {
                 });
                 changePage('Main')
             }
+        } else {
+            alert('Bigg RIP eh')
         }
     });
 }

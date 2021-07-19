@@ -8,14 +8,14 @@ chrome.runtime.onInstalled.addListener(() => {
     });
 });
 
-//Keep track of active tab id (seems to be same shit as below eh?)
 chrome.tabs.onActivated.addListener(activeInfo => {
-  activeTabId = activeInfo.tabId;
-});
+    activeTabId = activeInfo.tabId
+})
 
 //Inject foreground into every tab
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && /^http/.test(tab.url)) {
+        activeTabId = tabId
         chrome.scripting.executeScript({
             target: { tabId: tabId },
             files: ["./foreground.js"]

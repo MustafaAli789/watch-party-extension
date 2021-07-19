@@ -10,7 +10,7 @@
       "128": "/images/icon-128x128.png"
   },
   "background": {
-      "service_worker": "bg-loader.js"
+      "service_worker": "background.js"
   },
   "action": {
       "default_popup": "popup.html",

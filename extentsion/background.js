@@ -1,4 +1,5 @@
 var activeTabId;
+var tabInWatchPartyRoom;
 
 chrome.runtime.onInstalled.addListener(() => {
     // default state goes here
@@ -56,6 +57,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.message === "validate_video_elem_on_screen") {
         chrome.tabs.sendMessage(activeTabId, {
             message: "video_on_screen"
+        }, resp => {
+            if (resp.message === 'success') {
+                sendResponse({
+                    message: 'success',
+                    payload: resp.payload
+                })
+            } else {
+                sendResponse({
+                    message: 'fail'
+                })
+            }
+        })
+        return true
+    } else if (request.message === "set_tab_in_room") {
+        tabInWatchPartyRoom = activeTabId
+        chrome.tabs.sendMessage(tabInWatchPartyRoom, {
+            message: 'create_room_connection',
+            payload: request.payload
         }, resp => {
             if (resp.message === 'success') {
                 sendResponse({

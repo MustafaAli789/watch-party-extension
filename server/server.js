@@ -10,7 +10,11 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   console.log('a user connected');
-  io.emit('hello', { someProperty: 'some value', otherProperty: 'other value' });
+  //io.emit('hello', { someProperty: 'some value', otherProperty: 'other value' });
+  socket.on('join', ({room}) => {
+    socket.join(room)
+    socket.emit('joined_room', "Successfully joined room " + room)
+  });
   socket.on('disconnect', () => {
     console.log('user disconnected');
   });

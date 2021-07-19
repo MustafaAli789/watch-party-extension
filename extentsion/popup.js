@@ -46,10 +46,19 @@ goToMainWithValidation = () => {
                     errorMsg.classList.add('hidden')
                     errorMsg.innerHTML = ''
                 }
-                chrome.storage.local.set({
-                    page: "Main"
-                });
-                changePage('Main')
+                chrome.runtime.sendMessage({
+                    message: 'set_tab_in_room',
+                    payload: roomNameInput.value.trim()
+                }, resp => {
+                    if (resp.message === 'success') {
+                        chrome.storage.local.set({
+                            page: "Main"
+                        });
+                        changePage('Main')
+                    } else {
+                        //err
+                    }
+                })
             }
         } else {
             alert('Bigg RIP eh')

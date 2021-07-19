@@ -15,11 +15,15 @@
 
 let vidElem = document.querySelector('video')
 
-//https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
-var socket = io.connect('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
-socket.on("hello",function(data){
-    alert("WORKING")
-});
+establishSocketConnection = (roomName) => {
+    //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
+    var socket = io.connect('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
+    socket.emit('join', {room: roomName})
+    socket.on("joined_room",function(data){
+        alert(data)
+    });
+}
+
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === 'video_on_screen') {
@@ -37,5 +41,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         return true;
-    } 
+    }  else if (request.message === 'create_room_connection') {
+        establishSocketConnection(request.payload)
+        sendResponse({
+            message: 'success',
+            payload: {canJoin: true}
+        })
+    }
 });

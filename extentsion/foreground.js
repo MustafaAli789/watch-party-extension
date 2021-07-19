@@ -15,9 +15,11 @@
 
 let vidElem = document.querySelector('video')
 
-if(vidElem != null && vidElem != undefined) {
-    vidElem.onseeked = () => alert("SUP")
-}
+//https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
+var socket = io.connect('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
+socket.on("hello",function(data){
+    alert("WORKING")
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === 'video_on_screen') {

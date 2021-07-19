@@ -8,6 +8,7 @@ chrome.runtime.onInstalled.addListener(() => {
     });
 });
 
+//isnt run when you close a tab and thus get onto a new tab :( hence why also setting activeTabid inside of tabs.onUpdated as well
 chrome.tabs.onActivated.addListener(activeInfo => {
     activeTabId = activeInfo.tabId
 })
@@ -18,10 +19,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         activeTabId = tabId
         chrome.scripting.executeScript({
             target: { tabId: tabId },
-            files: ["./foreground.js"]
+            files: ["./socketio/socket.io.js"]
         })
             .then(() => {
-                console.log("INJECTED THE FOREGROUND SCRIPT.");
+                console.log("INJECTED THE SOCKET IO SCRIPT.");
+                chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    files: ["./foreground.js"]
+                })
+                    .then(() => {
+                        console.log("INJECTED THE FOREGROUND SCRIPT.");
+                    })
             }).catch(err => console.log(err));
     }
 });

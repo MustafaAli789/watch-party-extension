@@ -1,4 +1,4 @@
-const Messages = {
+let Messages = {
     TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
     SUCCESS: "success",
     FAILURE: "failure",
@@ -19,7 +19,15 @@ chrome.storage.local.get('page', data => {
 })
 
 validRoomInput = () => {
-    return roomNameInput.value.trim() != ""
+    if(roomNameInput.value.trim() === "") {
+        errorMsg.classList.remove('hidden')
+        errorMsg.innerHTML = 'Please enter a room/id'
+        return false
+    } else {
+        errorMsg.classList.add('hidden')
+        errorMsg.innerHTML = ''
+        return true
+    }
 }
 
 newRoomBtn.addEventListener('click', e => {
@@ -41,14 +49,7 @@ goToMainWithValidation = () => {
     }, response => {
         if (response.status === Messages.SUCCESS) {
             if (response.payload === true) {
-                if (!validRoomInput()) {
-                    errorMsg.classList.remove('hidden')
-                    errorMsg.innerHTML = 'Please enter a room/id'
-                    return
-                } else {
-                    errorMsg.classList.add('hidden')
-                    errorMsg.innerHTML = ''
-                }
+                if(!validRoomInput()) return
                 chrome.runtime.sendMessage({
                     message: Messages.TOBG_OPEN_CHANNEL_IN_TAB,
                     payload: roomNameInput.value.trim()

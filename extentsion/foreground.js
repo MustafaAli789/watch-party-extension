@@ -13,16 +13,19 @@
     // No return value here, so the return value is "undefined" (without quotes).
 })(); // <-- Invoke function. The return value is passed back to executeScript
 
-const Messages = {
-    TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
-    SUCCESS: "success",
-    FAILURE: "failure",
-    TOBG_OPEN_CHANNEL_IN_TAB: "tobg_open_channel_in_tab",
-    TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
-    TOFG_OPEN_CHANNEL_IN_TAB: "tofg_open_channel_in_tab",
+if (typeof messages != undefined) {
+    var Messages = {
+        TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
+        SUCCESS: "success",
+        FAILURE: "failure",
+        TOBG_OPEN_CHANNEL_IN_TAB: "tobg_open_channel_in_tab",
+        TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
+        TOFG_OPEN_CHANNEL_IN_TAB: "tofg_open_channel_in_tab",
+    }
 }
-
-let vidElem = document.querySelector('video')
+if (typeof vidElem != undefined) { 
+    var vidElem = document.querySelector('video')
+}
 
 establishSocketConnection = (roomName) => {
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error

@@ -1,4 +1,4 @@
-const Messages = {
+let Messages = {
     TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
     SUCCESS: "success",
     FAILURE: "failure",
@@ -40,42 +40,35 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-
 // Message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === Messages.TOBG_VIDEO_ON_SCREEN) {
-        chrome.tabs.sendMessage(activeTabId, {
-            message: Messages.TOFG_VIDEO_ON_SCREEN
-        }, resp => {
-            if (resp.status === Messages.SUCCESS) {
-                sendResponse({
-                    status: Messages.SUCCESS,
-                    payload: resp.payload
-                })
-            } else {
-                sendResponse({
-                    status: Messages.FAILURE
-                })
-            }
-        })
+        standardMessageToForeground(activeTabId, Messages.TOFG_VIDEO_ON_SCREEN, null, standardCallback(sendResponse))
         return true
     } else if (request.message === Messages.TOBG_OPEN_CHANNEL_IN_TAB) {
         tabIdWithChannelOpen = activeTabId
-        chrome.tabs.sendMessage(tabIdWithChannelOpen, {
-            message: Messages.TOFG_OPEN_CHANNEL_IN_TAB,
-            payload: request.payload
-        }, resp => {
-            if (resp.status === Messages.SUCCESS) {
-                sendResponse({
-                    status: Messages.SUCCESS,
-                    payload: resp.payload
-                })
-            } else {
-                sendResponse({
-                    status: Messages.FAILURE
-                })
-            }
-        })
+        standardMessageToForeground(tabIdWithChannelOpen, Messages.TOFG_OPEN_CHANNEL_IN_TAB, request.payload, standardCallback(sendResponse))
         return true
     }
 });
+
+standardMessageToForeground = (tabId, message, payload, callback) => {
+    chrome.tabs.sendMessage(tabId, {
+        message: message,
+        payload: payload
+    }, resp => callback(resp))
+}
+
+//Send success or failure and pass on payload
+standardCallback = (sendResponse) => (resp) => {
+    if (resp.status === Messages.SUCCESS) {
+        sendResponse({
+            status: Messages.SUCCESS,
+            payload: resp.payload
+        })
+    } else {
+        sendResponse({
+            status: Messages.FAILURE
+        })
+    }
+}

@@ -54,12 +54,15 @@ h1{
 .addItemContainer input{
     width: 300px;
     height: 30px;
-    margin-top: 25px;
     text-align: center;
     font-size: 15px;
     border: none;
     border-radius: 3px;
     font-family: 'Roboto', sans-serif;
+    margin-top: 5px;
+}
+#roomInput {
+    margin-top: 25px;
 }
 .error {
     color: red;
@@ -68,8 +71,8 @@ h1{
     margin: 2px 0px 2px 0px;
 }
 .styledButton{
-    margin-top: 5px;
-    width: 300px;
+    margin-top: 1px;
+    width: 304px;
     height: 30px;
     border: none;
     border-radius: 3px;
@@ -79,8 +82,8 @@ h1{
     font-size: 17px;
     transition: background-color 1s;
 }
-#newButton {
-    margin-top: 15px;
+#newRoomBtn {
+    margin-top: 20px;
 }
 #newRoomBtn:hover{
     background-color: green;

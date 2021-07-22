@@ -1,19 +1,22 @@
+const Messages = {
+    TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
+    SUCCESS: "success",
+    FAILURE: "failure",
+    TOBG_OPEN_CHANNEL_IN_TAB: "tobg_open_channel_in_tab",
+    TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
+    TOFG_OPEN_CHANNEL_IN_TAB: "tofg_open_channel_in_tab",
+}
+
 const newRoomBtn = document.getElementById("newRoomBtn")
 const joinRoomBtn = document.getElementById("joinRoomBtn")
 const backBtn = document.getElementById("backBtn")
 const roomNameInput = document.getElementById("roomInput")
 const errorMsg = document.querySelector(".error")
 
-let curActivePage = 'Start'
-
 //Initial open of popup
-chrome.runtime.sendMessage({ 
-    message: "get_cur_page"
-}, response => {
-    if (response.message === 'success') {
-        changePage(response.payload)
-    }
-});
+chrome.storage.local.get('page', data => {
+    changePage(data.page)
+})
 
 validRoomInput = () => {
     return roomNameInput.value.trim() != ""
@@ -34,9 +37,9 @@ backBtn.addEventListener('click', e => {
 
 goToMainWithValidation = () => {
     chrome.runtime.sendMessage({ 
-        message: "validate_video_elem_on_screen"
+        message: Messages.TOBG_VIDEO_ON_SCREEN
     }, response => {
-        if (response.message === 'success') {
+        if (response.status === Messages.SUCCESS) {
             if (response.payload === true) {
                 if (!validRoomInput()) {
                     errorMsg.classList.remove('hidden')
@@ -47,10 +50,10 @@ goToMainWithValidation = () => {
                     errorMsg.innerHTML = ''
                 }
                 chrome.runtime.sendMessage({
-                    message: 'set_tab_in_room',
+                    message: Messages.TOBG_OPEN_CHANNEL_IN_TAB,
                     payload: roomNameInput.value.trim()
                 }, resp => {
-                    if (resp.message === 'success') {
+                    if (resp.status === Messages.SUCCESS) {
                         chrome.storage.local.set({
                             page: "Main"
                         });
@@ -59,21 +62,21 @@ goToMainWithValidation = () => {
                         //err
                     }
                 })
+            } else{
+                //no video on screen
             }
         } else {
-            alert('Bigg RIP eh')
+            //err
         }
     });
 }
 
 changePage = (page) => {
     if (page === 'Start') {
-        curActivePage = 'Start'
         document.getElementById("startPage").classList.remove('hidden')
         document.getElementById("mainPage").classList.add('hidden')
         roomNameInput.value = ""
     } else if (page === 'Main') {
-        curActivePage = 'Main'
         document.getElementById("startPage").classList.add('hidden')
         document.getElementById("mainPage").classList.remove('hidden')
     }

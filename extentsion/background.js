@@ -1,5 +1,14 @@
+const Messages = {
+    TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
+    SUCCESS: "success",
+    FAILURE: "failure",
+    TOBG_OPEN_CHANNEL_IN_TAB: "tobg_open_channel_in_tab",
+    TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
+    TOFG_OPEN_CHANNEL_IN_TAB: "tofg_open_channel_in_tab",
+}
+
 var activeTabId;
-var tabInWatchPartyRoom;
+var tabIdWithChannelOpen;
 
 chrome.runtime.onInstalled.addListener(() => {
     // default state goes here
@@ -22,68 +31,48 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             target: { tabId: tabId },
             files: ["./socketio/socket.io.js"]
         })
-            .then(() => {
-                console.log("INJECTED THE SOCKET IO SCRIPT.");
-                chrome.scripting.executeScript({
-                    target: { tabId: tabId },
-                    files: ["./foreground.js"]
-                })
-                    .then(() => {
-                        console.log("INJECTED THE FOREGROUND SCRIPT.");
-                    })
-            }).catch(err => console.log(err));
+        .then(() => {
+            chrome.scripting.executeScript({
+                target: { tabId: tabId },
+                files: ["./foreground.js"]
+            })
+        }).catch(err => console.log(err));
     }
 });
 
 
 // Message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.message === 'get_cur_page') {
-        chrome.storage.local.get('page', data => {
-            if (chrome.runtime.lastError) {
-                sendResponse({
-                    message: 'fail'
-                });
-                return;
-            }
-
-            sendResponse({
-                message: 'success',
-                payload: data.page
-            });
-        });
-
-        return true;
-    } else if (request.message === "validate_video_elem_on_screen") {
+    if (request.message === Messages.TOBG_VIDEO_ON_SCREEN) {
         chrome.tabs.sendMessage(activeTabId, {
-            message: "video_on_screen"
+            message: Messages.TOFG_VIDEO_ON_SCREEN
         }, resp => {
-            if (resp.message === 'success') {
+            if (resp.status === Messages.SUCCESS) {
                 sendResponse({
-                    message: 'success',
+                    status: Messages.SUCCESS,
                     payload: resp.payload
                 })
             } else {
                 sendResponse({
-                    message: 'fail'
+                    status: Messages.FAILURE
                 })
             }
         })
         return true
-    } else if (request.message === "set_tab_in_room") {
-        tabInWatchPartyRoom = activeTabId
-        chrome.tabs.sendMessage(tabInWatchPartyRoom, {
-            message: 'create_room_connection',
+    } else if (request.message === Messages.TOBG_OPEN_CHANNEL_IN_TAB) {
+        tabIdWithChannelOpen = activeTabId
+        chrome.tabs.sendMessage(tabIdWithChannelOpen, {
+            message: Messages.TOFG_OPEN_CHANNEL_IN_TAB,
             payload: request.payload
         }, resp => {
-            if (resp.message === 'success') {
+            if (resp.status === Messages.SUCCESS) {
                 sendResponse({
-                    message: 'success',
+                    status: Messages.SUCCESS,
                     payload: resp.payload
                 })
             } else {
                 sendResponse({
-                    message: 'fail'
+                    status: Messages.FAILURE
                 })
             }
         })

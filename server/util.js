@@ -27,11 +27,11 @@ Room = (roomId, roomName) => {
 
 const rooms = []
 
-const addRoom = ({ roomId, roomName }) => {
+const addRoom = (roomId, roomName) => {
     rooms.push(new Room(roomId, roomName))
 }
 
-const addUserToRoom = ({ userId, userName, roomId }) => {
+const addUserToRoom = (userId, userName, roomId) => {
     userName = userName.trim().toLowerCase();
 
     const existingRoom = rooms.find(room => room.roomId == roomId)

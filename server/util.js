@@ -1,75 +1,69 @@
-User = (userId, userName, roomId) => {
-    this.userId = userId;
-    this.userName = userName;
-    this.roomId = roomId;
-}   
-
-Room = (roomId, roomName) => {
-    this.roomId = roomId;
-    this.roomName = roomName
-    this.users = []
-
-    addUser = (user) => {
-        this.users.push(user)
+var User = /** @class */ (function () {
+    function User(userId, userName, roomId) {
+        this.userId = userId;
+        this.userName = userName;
+        this.roomId = roomId;
     }
-    removeUser = (userId) => {
-        let userToDel;
-        let indToDel = this.users.map(user => user.userId).find(id => id == userId)
-        if (ind != null && ind != undefined) {
-            userToDel = this.users[indToDel]
-            this.users.splice(indToDel, 1)
-            return userToDel
-        } else {
-            return null
-        }
+    return User;
+}());
+var Room = /** @class */ (function () {
+    function Room(roomId, roomName) {
+        var _this = this;
+        this.users = [];
+        this.addUser = function (user) {
+            _this.users.push(user);
+        };
+        this.removeUserFromRoom = function (userId) {
+            var userToDel;
+            var indToDel = _this.users.map(function (user) { return user.userId; }).indexOf(userId);
+            if (indToDel != null && indToDel != undefined) {
+                userToDel = _this.users[indToDel];
+                _this.users.splice(indToDel, 1);
+                return userToDel;
+            }
+            else {
+                return null;
+            }
+        };
+        this.roomId = roomId;
+        this.roomName = roomName;
     }
-}
-
-const rooms = []
-
-const addRoom = (roomId, roomName) => {
-    rooms.push(new Room(roomId, roomName))
-}
-
-const addUserToRoom = (userId, userName, roomId) => {
-    userName = userName.trim().toLowerCase();
-
-    const existingRoom = rooms.find(room => room.roomId == roomId)
-
+    return Room;
+}());
+var rooms = [];
+var addRoom = function (roomId, roomName) {
+    rooms.push(new Room(roomId, roomName));
+};
+var addUserToRoom = function (userId, userName, roomId) {
+    var uName = userName.trim().toLowerCase();
+    var existingRoom = rooms.find(function (room) { return room.roomId == roomId; });
     if (!existingRoom) {
-        return {error:  `Room with id ${roomId} does not exist.`}
+        return { error: "Room with id " + roomId + " does not exist.", user: null };
     }
-
-    const user = new User(userId, userName, roomId)
-    rooms.find(room => room.roomId == roomId).addUser(user)
-
-    return { user }
-}
-
-const removeUser = (userId) => {
-    let deletedUser
-    for (let i =0; i<rooms.length; i++) {
-        deletedUser = rooms[i].removeUser(userId)
-        if(deletedUser != null) {
-
+    var user = new User(userId, uName, roomId);
+    existingRoom.addUser(user);
+    return { user: user, error: null };
+};
+var removeUser = function (userId) {
+    var deletedUser;
+    for (var i = 0; i < rooms.length; i++) {
+        deletedUser = rooms[i].removeUserFromRoom(userId);
+        if (deletedUser != null) {
             //special check to see if room empty i.e last person in room left
             if (rooms[i].users.length == 0) {
-                rooms.splice(i, 1)
+                rooms.splice(i, 1);
             }
-
-            return { deletedUser }
+            return { deletedUser: deletedUser, error: null };
         }
     }
-
-    return {error: `User with id ${userId} does not exist`}
-}
-
-const getUsersInRoom = (roomId) => {
-    rooms.forEach(room => {
+    return { error: "User with id " + userId + " does not exist", deletedUser: null };
+};
+var getUsersInRoom = function (roomId) {
+    rooms.forEach(function (room) {
         if (room.roomId == roomId) {
-            return room.users
+            return room.users;
         }
-    })
-}
-
-module.exports={ addRoom, removeUser, addUserToRoom, getUsersInRoom }
+    });
+    return [];
+};
+module.exports = { addRoom: addRoom, removeUser: removeUser, addUserToRoom: addUserToRoom, getUsersInRoom: getUsersInRoom };

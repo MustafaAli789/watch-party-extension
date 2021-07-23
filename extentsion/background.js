@@ -26,6 +26,8 @@ chrome.tabs.onActivated.addListener(activeInfo => {
 //Inject foreground into every tab
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && /^http/.test(tab.url)) {
+        console.log("chagne active tab")
+        console.log({tabId: tabId, changeInfo: changeInfo, tab: tab})
         activeTabId = tabId
         chrome.scripting.executeScript({
             target: { tabId: tabId },
@@ -35,7 +37,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             chrome.scripting.executeScript({
                 target: { tabId: tabId },
                 files: ["./foreground.js"]
-            })
+            }).then(console.log("Injected foregroun"))
         }).catch(err => console.log(err));
     }
 });

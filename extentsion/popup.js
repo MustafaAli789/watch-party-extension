@@ -12,6 +12,7 @@ const joinRoomBtn = document.getElementById("joinRoomBtn")
 const backBtn = document.getElementById("backBtn")
 const roomNameInput = document.getElementById("roomInput")
 const errorMsg = document.querySelector(".error")
+const nameInput = document.getElementById("nameInput")
 
 //Initial open of popup
 chrome.storage.local.get('page', data => {
@@ -34,7 +35,7 @@ newRoomBtn.addEventListener('click', e => {
     goToMainWithValidation()
 })
 joinRoomBtn.addEventListener('click', e => {
-    goToMainWithValidation()
+    //goToMainWithValidation()
 })
 backBtn.addEventListener('click', e => {
     chrome.storage.local.set({
@@ -52,7 +53,10 @@ goToMainWithValidation = () => {
                 if(!validRoomInput()) return
                 chrome.runtime.sendMessage({
                     message: Messages.TOBG_OPEN_CHANNEL_IN_TAB,
-                    payload: roomNameInput.value.trim()
+                    payload: {
+                        roomName: roomNameInput.value.trim(), 
+                        userName: nameInput.value
+                    }
                 }, resp => {
                     if (resp.status === Messages.SUCCESS) {
                         chrome.storage.local.set({

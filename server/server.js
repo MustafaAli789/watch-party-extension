@@ -33,8 +33,7 @@ io.on(Events.CONNECTION, (socket) => {
       }
 
       socket.join(roomId)
-      socket.emit(Events.CREATED_ROOM, { payload: `You have successfuly created and joined room ${roomName}` })
-      socket.emit(Events.ROOM_USERS_DATA, { payload: getUsersInRoom(roomId) })
+      socket.emit(Events.CREATED_ROOM, { payload: getUsersInRoom(roomId) })
     } else if (action == "JOIN"){
       const { error, user } = addUserToRoom(socket.id, userName, roomId)
 
@@ -54,7 +53,6 @@ io.on(Events.CONNECTION, (socket) => {
 
     console.log("Deleted user:")
     console.log(deletedUser)
-    console.log(error)
 
     if (error) {
       console.log("shouldnt happen theoretiically")

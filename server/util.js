@@ -59,11 +59,12 @@ var removeUser = function (userId) {
     return { error: "User with id " + userId + " does not exist", deletedUser: null };
 };
 var getUsersInRoom = function (roomId) {
-    rooms.forEach(function (room) {
+    for (var i = 0; i < rooms.length; i++) {
+        var room = rooms[i];
         if (room.roomId == roomId) {
             return room.users;
         }
-    });
+    }
     return [];
 };
 module.exports = { addRoom: addRoom, removeUser: removeUser, addUserToRoom: addUserToRoom, getUsersInRoom: getUsersInRoom };

@@ -75,11 +75,12 @@ const removeUser = (userId: String): { deletedUser: User, error: String } => {
 }
 
 const getUsersInRoom = (roomId: String): Array<User> => {
-    rooms.forEach(room => {
+    for (let i =0; i<rooms.length; i++) {
+        let room: Room = rooms[i];
         if (room.roomId == roomId) {
             return room.users
         }
-    })
+    }
     return []
 }
 

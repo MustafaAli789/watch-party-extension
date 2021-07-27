@@ -2,27 +2,33 @@
 // Wrapping in a function to not leak/modify variables if the script
 // was already inserted before.
 //Guard to make sure that were not injecting a script over and over when changing tabs back and forth
-console.log('HELOOOO')
-console.log(window.hasRun)
 if (window.hasRun === true) {
     //script ends here
 } else {
     window.hasRun = true;
-    console.log(window.hasRun)
 
-    if (typeof messages != undefined) {
-        var Messages = {
-            TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
-            SUCCESS: "success",
-            FAILURE: "failure",
-            TOBG_OPEN_CHANNEL_IN_TAB: "tobg_open_channel_in_tab",
-            TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
-            TOFG_OPEN_CHANNEL_IN_TAB: "tofg_open_channel_in_tab",
-        }
+    var Messages = {
+        TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
+        SUCCESS: "success",
+        FAILURE: "failure",
+        TOBG_CREATE_ROOM_IN_TAB: "tobg_create_room_in_tab",
+        TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
+        TOFG_CREATE_ROOM_IN_TAB: "tofg_create_room_in_tab",
+        TOBG_DISCONNECT: "tobg_disconnect",
+        TOFG_DISCONNECT: 'tofg_disconnect'
     }
-    if (typeof vidElem != undefined) { 
-        var vidElem = document.querySelector('video')
+    var SocketEvents = {
+        JOIN: 'join',
+        CREATED_ROOM: 'created_room',
+        ROOM_USERS_DATA: 'room_users_data',
+        JOINED_ROOM: 'joined_room',
+        DISCONNECT: 'disconnect',
+        USER_DISCONNECTED: 'user_disconnected',
+        CONNECTION: 'connection',
+        FORCE_DISCONNECT: 'force_disconnect'
     }
+    var vidElem = document.querySelector('video')
+    var socket
 
     //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
     guid = () => {
@@ -37,32 +43,21 @@ if (window.hasRun === true) {
 
     establishSocketConnection = ({roomName, userName}, sendResponse) => {
 
-        const Events = {
-            JOIN: 'join',
-            CREATED_ROOM: 'created_room',
-            ROOM_USERS_DATA: 'room_users_data',
-            JOINED_ROOM: 'joined_room',
-            DISCONNECT: 'disconnect',
-            USER_DISCONNECTED: 'user_disconnected',
-            CONNECTION: 'connection'
-        }
-
         //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
-        var socket = io.connect('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
+        socket = io.connect('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
         //theoretically should be unique
         let roomId = guid()
 
-        socket.emit(Events.JOIN, {roomName: roomName, userName: userName, roomId: roomId, action: "CREATE"}, (err) => {
+        socket.emit(SocketEvents.JOIN, {roomName: roomName, userName: userName, roomId: roomId, action: "CREATE"}, (err) => {
             // shouldnt happen theoretically
             alert(err)
         })
-        socket.on(Events.CREATED_ROOM, ({payload}) => {
+        socket.on(SocketEvents.CREATED_ROOM, ({payload}) => {
             sendResponse({
                 status: Messages.SUCCESS,
-                payload: {canJoin: true}
+                payload: {users: payload, roomId: roomId}
             })
-            alert(payload)
         });
     }
 
@@ -83,9 +78,14 @@ if (window.hasRun === true) {
             }
 
             return true;
-        }  else if (request.message === Messages.TOFG_OPEN_CHANNEL_IN_TAB) {
-            console.log("weird")
+        }  else if (request.message === Messages.TOFG_CREATE_ROOM_IN_TAB) {
             establishSocketConnection(request.payload, sendResponse)
+            return true
+        } else if (request.message === Messages.TOFG_DISCONNECT) {
+            socket.emit(SocketEvents.FORCE_DISCONNECT)
+            sendResponse({
+                status: Messages.SUCCESS
+            })
         }
     });
 }

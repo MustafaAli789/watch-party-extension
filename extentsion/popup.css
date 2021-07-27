@@ -16,15 +16,41 @@ h1{
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
     color: #525252;
+    margin-left: 20px;
 }
 .head img{
     height: 45px;
     width: 45px;
 }
-.head h1{
-    margin-left: 20px;
+#mainPage h3{
+    padding: 0 10px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    color: black;
 }
-.name{
+#mainPage h1{
+    margin: 0px 0px 0px 10px;
+}
+#mainPage .head img {
+    width: 32px;
+    height: 32px;
+}
+#mainPage .roomIdContainer {
+    display: flex;
+    align-items: center;
+}
+#mainPage .roomIdContainer img {
+    width: 15px;
+    height: 15px;
+    margin-bottom: 2px;
+}
+#mainPage .roomIdContainer img:hover {
+    cursor: pointer;
+}
+#roomId {
+    color: #525252
+}
+.name, .roomName{
     color: white;
 }
 .header_divider_container{

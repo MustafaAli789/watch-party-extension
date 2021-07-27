@@ -2,9 +2,11 @@ let Messages = {
     TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
     SUCCESS: "success",
     FAILURE: "failure",
-    TOBG_OPEN_CHANNEL_IN_TAB: "tobg_open_channel_in_tab",
+    TOBG_CREATE_ROOM_IN_TAB: "tobg_create_room_in_tab",
     TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
-    TOFG_OPEN_CHANNEL_IN_TAB: "tofg_open_channel_in_tab",
+    TOFG_CREATE_ROOM_IN_TAB: "tofg_create_room_in_tab",
+    TOBG_DISCONNECT: "tobg_disconnect",
+    TOFG_DISCONNECT: 'tofg_disconnect'
 }
 
 var activeTabId;
@@ -47,9 +49,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === Messages.TOBG_VIDEO_ON_SCREEN) {
         standardMessageToForeground(activeTabId, Messages.TOFG_VIDEO_ON_SCREEN, null, standardCallback(sendResponse))
         return true
-    } else if (request.message === Messages.TOBG_OPEN_CHANNEL_IN_TAB) {
+    } else if (request.message === Messages.TOBG_CREATE_ROOM_IN_TAB) {
         tabIdWithChannelOpen = activeTabId
-        standardMessageToForeground(tabIdWithChannelOpen, Messages.TOFG_OPEN_CHANNEL_IN_TAB, request.payload, standardCallback(sendResponse))
+        standardMessageToForeground(tabIdWithChannelOpen, Messages.TOFG_CREATE_ROOM_IN_TAB, request.payload, standardCallback(sendResponse))
+        return true
+    } else if (request.message === Messages.TOBG_DISCONNECT) {
+        standardMessageToForeground(tabIdWithChannelOpen, Messages.TOFG_DISCONNECT, request.payload, standardCallback(sendResponse))
         return true
     }
 });

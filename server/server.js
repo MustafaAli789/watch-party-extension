@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const http = require('http');
+const { disconnect } = require('process');
 const server = http.createServer(app);
 const io = require("socket.io")(server);
 
@@ -13,7 +14,8 @@ const Events = {
   JOINED_ROOM: 'joined_room',
   DISCONNECT: 'disconnect',
   USER_DISCONNECTED: 'user_disconnected',
-  CONNECTION: 'connection'
+  CONNECTION: 'connection',
+  FORCE_DISCONNECT: 'force_disconnect'
 }
 
 
@@ -49,19 +51,29 @@ io.on(Events.CONNECTION, (socket) => {
   });
 
   socket.on(Events.DISCONNECT, () => {
-    const { error, deletedUser } = removeUser(socket.id)
-
-    console.log("Deleted user:")
-    console.log(deletedUser)
-
-    if (error) {
-      console.log("shouldnt happen theoretiically")
-      return
-    }
-    io.to(deletedUser.roomId).emit(Events.USER_DISCONNECTED, { payload: `User with name: ${deletedUser.userName} has left the room` })
+    disconnectSocket(socket, io)
   });
 
+  socket.on(Events.FORCE_DISCONNECT, () => {
+    socket.disconnect()
+  })
+
 });
+
+function disconnectSocket(socket, io) {
+  const { error, deletedUser } = removeUser(socket.id)
+
+  console.log("Deleted user:")
+  console.log(deletedUser)
+
+  if (error) {
+    console.log("shouldnt happen theoretiically")
+    return false
+  }
+  io.to(deletedUser.roomId).emit(Events.USER_DISCONNECTED, { payload: `User with name: ${deletedUser.userName} has left the room` })
+  io.to(deletedUser.roomId).emit(Events.ROOM_USERS_DATA, { payload: getUsersInRoom(deletedUser.roomId) })
+  return true
+}
 
 server.listen(3000, () => {
   console.log('listening on *:3000');

@@ -1,3 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getUsersInRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.Room = exports.User = void 0;
 var User = /** @class */ (function () {
     function User(userId, userName, roomId) {
         this.userId = userId;
@@ -6,6 +9,7 @@ var User = /** @class */ (function () {
     }
     return User;
 }());
+exports.User = User;
 var Room = /** @class */ (function () {
     function Room(roomId, roomName) {
         var _this = this;
@@ -30,10 +34,12 @@ var Room = /** @class */ (function () {
     }
     return Room;
 }());
+exports.Room = Room;
 var rooms = [];
 var addRoom = function (roomId, roomName) {
     rooms.push(new Room(roomId, roomName));
 };
+exports.addRoom = addRoom;
 var addUserToRoom = function (userId, userName, roomId) {
     var uName = userName.trim().toLowerCase();
     var existingRoom = rooms.find(function (room) { return room.roomId == roomId; });
@@ -44,6 +50,7 @@ var addUserToRoom = function (userId, userName, roomId) {
     existingRoom.addUser(user);
     return { user: user, error: null };
 };
+exports.addUserToRoom = addUserToRoom;
 var removeUser = function (userId) {
     var deletedUser;
     for (var i = 0; i < rooms.length; i++) {
@@ -58,6 +65,7 @@ var removeUser = function (userId) {
     }
     return { error: "User with id " + userId + " does not exist", deletedUser: null };
 };
+exports.removeUser = removeUser;
 var getUsersInRoom = function (roomId) {
     for (var i = 0; i < rooms.length; i++) {
         var room = rooms[i];
@@ -67,4 +75,6 @@ var getUsersInRoom = function (roomId) {
     }
     return [];
 };
-module.exports = { addRoom: addRoom, removeUser: removeUser, addUserToRoom: addUserToRoom, getUsersInRoom: getUsersInRoom };
+exports.getUsersInRoom = getUsersInRoom;
+//module.exports={ addRoom, removeUser, addUserToRoom, getUsersInRoom }
+//# sourceMappingURL=util.js.map

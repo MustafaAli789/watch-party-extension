@@ -1,4 +1,4 @@
-class User {
+export class User {
     userId: String;
     userName: String;
     roomId: String;
@@ -10,7 +10,7 @@ class User {
     
 }   
 
-class Room {
+export class Room {
     roomId: String;
     roomName: String;
     users: User[] = [];
@@ -37,11 +37,11 @@ class Room {
 
 const rooms: Array<Room> = []
 
-const addRoom = (roomId: String, roomName: String): void => {
+export const addRoom = (roomId: String, roomName: String): void => {
     rooms.push(new Room(roomId, roomName))
 }
 
-const addUserToRoom = (userId: String, userName:String, roomId: String): {error: String, user: User} => {
+export const addUserToRoom = (userId: String, userName:String, roomId: String): {error: String, user: User} => {
     let uName: String = userName.trim().toLowerCase();
 
     const existingRoom: Room = rooms.find(room => room.roomId == roomId)
@@ -56,7 +56,7 @@ const addUserToRoom = (userId: String, userName:String, roomId: String): {error:
     return { user, error: null }
 }
 
-const removeUser = (userId: String): { deletedUser: User, error: String } => {
+export const removeUser = (userId: String): { deletedUser: User, error: String } => {
     let deletedUser: User
     for (let i =0; i<rooms.length; i++) {
         deletedUser = rooms[i].removeUserFromRoom(userId)
@@ -74,7 +74,7 @@ const removeUser = (userId: String): { deletedUser: User, error: String } => {
     return {error: `User with id ${userId} does not exist`, deletedUser: null}
 }
 
-const getUsersInRoom = (roomId: String): Array<User> => {
+export const getUsersInRoom = (roomId: String): Array<User> => {
     for (let i =0; i<rooms.length; i++) {
         let room: Room = rooms[i];
         if (room.roomId == roomId) {
@@ -84,4 +84,4 @@ const getUsersInRoom = (roomId: String): Array<User> => {
     return []
 }
 
-module.exports={ addRoom, removeUser, addUserToRoom, getUsersInRoom }
+//module.exports={ addRoom, removeUser, addUserToRoom, getUsersInRoom }

@@ -22,6 +22,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 //isnt run when you close a tab and thus get onto a new tab :( hence why also setting activeTabid inside of tabs.onUpdated as well
 chrome.tabs.onActivated.addListener(activeInfo => {
+    console.log("chagne active tab")
     activeTabId = activeInfo.tabId
 })
 

@@ -3,8 +3,10 @@
 // was already inserted before.
 //Guard to make sure that were not injecting a script over and over when changing tabs back and forth
 if (window.hasRun === true) {
+    console.log("sike")
     //script ends here
 } else {
+    console.log("nvmm")
     window.hasRun = true;
 
     var Messages = {

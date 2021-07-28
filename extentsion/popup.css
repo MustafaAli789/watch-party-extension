@@ -22,7 +22,7 @@ h1{
     height: 45px;
     width: 45px;
 }
-#mainPage h3{
+#mainPage .roomIdContainer h3{
     padding: 0 10px;
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
@@ -46,6 +46,24 @@ h1{
 }
 #mainPage .roomIdContainer img:hover {
     cursor: pointer;
+}
+#mainPage .users {
+    margin-left: 10px;
+    margin-right: 30px;
+    margin-bottom: 10px;
+}
+#mainPage .userElem{
+    padding: 4px;
+    background-color: #f1a2a2;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+}
+#mainPage .users h3{
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    color: black;
+    margin: 0px 0px 5px 0px;
 }
 #roomId {
     color: #525252

@@ -57,9 +57,9 @@ backBtn.addEventListener('click', e => {
 copyImgBtn.addEventListener('click', () => {
     let roomId = document.querySelector("#roomId").innerHTML
     navigator.clipboard.writeText(roomId).then(() => {
-        alert("Successfully copied")
+        //Successfully copied
     }, () => {
-        alert("Failed to copy")
+        //Failed to copy
     })
 })
 
@@ -81,6 +81,7 @@ createNewRoomWithValidation = () => {
                         chrome.storage.local.set({
                             page: "Main"
                         });
+                        console.log(resp.payload)
                         changePage('Main', { roomId: resp.payload.roomId })
                         updateMainUsers(resp.payload.users)
                     } else {
@@ -116,7 +117,13 @@ changePage = (page, details) => {
 
 //[user{userName: string, roomId: string, userId: string}]
 updateMainUsers = (users) => {
-    console.log(users)
+    let usersContaienr = document.querySelector("#mainPage .users")
+    users.forEach(user => {
+        let userElem = document.createElement("DIV")
+        userElem.classList.add("userElem")
+        userElem.innerHTML = user.userName
+        usersContaienr.append(userElem)
+    });
 }
 
 

@@ -1,28 +1,19 @@
-let Messages = {
-    TOBG_VIDEO_ON_SCREEN: "tobg_validate_video_elem_on_screen",
-    SUCCESS: "success",
-    FAILURE: "failure",
-    TOBG_CREATE_ROOM_IN_TAB: "tobg_create_room_in_tab",
-    TOFG_VIDEO_ON_SCREEN: "tofg_validate_video_elem_on_screen",
-    TOFG_CREATE_ROOM_IN_TAB: "tofg_create_room_in_tab",
-    TOBG_DISCONNECT: "tobg_disconnect",
-    TOFG_DISCONNECT: 'tofg_disconnect'
-}
-
-const newRoomBtn = document.getElementById("newRoomBtn")
-const joinRoomBtn = document.getElementById("joinRoomBtn")
-const backBtn = document.getElementById("backBtn")
-const roomNameInput = document.getElementById("roomInput")
-const errorMsg = document.querySelector(".error")
-const nameInput = document.getElementById("nameInput")
-const copyImgBtn = document.getElementById("copyImgBtn")
+import { Messages, Page, PageStorage } from './models/constants'
+const newRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("newRoomBtn")
+const joinRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("joinRoomBtn")
+const backBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("backBtn")
+const roomNameInput: HTMLInputElement = <HTMLInputElement>document.getElementById("roomInput")
+const errorMsg: HTMLParagraphElement = document.querySelector(".error")
+const nameInput: HTMLInputElement = <HTMLInputElement>document.getElementById("nameInput")
+const copyImgBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("copyImgBtn")
 
 //Initial open of popup
-chrome.storage.local.get('page', data => {
-    changePage(data.page)
+chrome.storage.local.get(PageStorage, data => {
+    let page: Page = data[PageStorage]
+    changePage(page, null)
 })
 
-validRoomInput = () => {
+const validRoomInput = () => {
     if(roomNameInput.value.trim() === "") {
         errorMsg.classList.remove('hidden')
         errorMsg.innerHTML = 'Please enter a room/id'
@@ -46,9 +37,9 @@ backBtn.addEventListener('click', e => {
     }, resp => {
         if (resp.status === Messages.SUCCESS) {
             chrome.storage.local.set({
-                page: "Start"
+                [PageStorage]: Page.start
             });
-            changePage('Start')
+            changePage(Page.start,  null)
         } else {
             //err
         }
@@ -63,7 +54,7 @@ copyImgBtn.addEventListener('click', () => {
     })
 })
 
-createNewRoomWithValidation = () => {
+const createNewRoomWithValidation = () => {
     chrome.runtime.sendMessage({ 
         message: Messages.TOBG_VIDEO_ON_SCREEN
     }, response => {
@@ -82,7 +73,7 @@ createNewRoomWithValidation = () => {
                             page: "Main"
                         });
                         console.log(resp.payload)
-                        changePage('Main', { roomId: resp.payload.roomId })
+                        changePage(Page.main, { roomId: resp.payload.roomId })
                         updateMainUsers(resp.payload.users)
                     } else {
                         //err for some reason couldnt connect to socket server
@@ -97,26 +88,26 @@ createNewRoomWithValidation = () => {
     });
 }
 
-changePage = (page, details) => {
-    if (page === 'Start') {
+const changePage = (page: Page, details) => {
+    if (page === Page.start) {
         document.getElementById("startPage").classList.remove('hidden')
         document.getElementById("mainPage").classList.add('hidden')
         document.getElementById("header").classList.remove('hidden')
         roomNameInput.value = ""
         nameInput.value = ""
-    } else if (page === 'Main') {
+    } else if (page === Page.main) {
         document.getElementById("startPage").classList.add('hidden')
         document.getElementById("mainPage").classList.remove('hidden')
         document.getElementById("header").classList.add('hidden')
 
         document.querySelector("#mainPage .roomName").innerHTML =  `${nameInput.value}`
-        document.getElementById("roomId").innerHTML = `${details.roomId}`
+        document.getElementById("roomId").innerHTML = `${details?.roomId}`
 
     }
 }
 
 //[user{userName: string, roomId: string, userId: string}]
-updateMainUsers = (users) => {
+const updateMainUsers = (users) => {
     let usersContaienr = document.querySelector("#mainPage .users")
     users.forEach(user => {
         let userElem = document.createElement("DIV")

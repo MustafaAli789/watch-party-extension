@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var SocketEvents = {
+const SocketEvents = {
     JOIN: 'join',
     CREATED_ROOM: 'created_room',
     ROOM_USERS_DATA: 'room_users_data',

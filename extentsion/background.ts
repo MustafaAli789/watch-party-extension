@@ -21,70 +21,75 @@ const setTabs = (tabs: Tabs) => {
     });
 }
 
-chrome.tabs.onRemoved.addListener((tabid) => {
+const tabChange = (tabId: number, logMsg: string) => {
     chrome.storage.local.get(TabsStorage, (data) => {
-        let updatedTabs: Tabs = data[TabsStorage]
-        updatedTabs.tabs.splice(updatedTabs.tabs.indexOf(updatedTabs.tabs.find(tab => tab.id === tabid)), 1)
-        setTabs(updatedTabs)
-    })
-})
-   
-// chrome.windows.onRemoved.addListener((windowid) => {
-//     alert("window closed")
-// })
 
-const tabChange = (tabId) => {
-    chrome.storage.local.get(TabsStorage, (data) => {
-        if (data[TabsStorage].tabs.find(tab => tab.id === tabId) == null) {
+        let updatedTabs: Tabs = Object.assign({}, data[TabsStorage])
 
-            console.log("working")
-            console.log(data)
+        //needs to be out here in case someone has a normal tab open but then opens a new chrome:// tab after
+        //the new tab wont be added to our tabs storage or injected but we do need all others tabs to be active false now
+        updatedTabs.tabs.forEach(tab => tab.active = false)
 
-            let updatedTabs: Tabs = data[TabsStorage]
-            updatedTabs.tabs.forEach(tab => tab.active = false)
-            updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
+        chrome.tabs.query({}, tabs => {
 
-            setTabs(updatedTabs)
+            //removing old tabs from our storage obj if it has been closed
+            for (let i = updatedTabs.tabs.length-1; i>=0; i--) {
+                let tabStorage: Tab = updatedTabs.tabs[i]
+                if (tabs.find(tab => tab.id == tabStorage.id) == null) {
+                    updatedTabs.tabs.splice(i, 1);
+                }
+            }
 
-            chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                files: ["./socketio/socket.io.js"]
-            })
-            .then(() => {
+            //new tab not in storage
+            if (data[TabsStorage].tabs.find(tab => tab.id === tabId) == null) {
+
                 chrome.scripting.executeScript({
                     target: { tabId: tabId },
-                    files: ["./foreground.js"]
-                }).then(() => console.log("Injected foregroun"))
-            }).catch(err => console.log(err));
+                    files: ["./socketio/socket.io.js"]
+                })
+                .then(() => {
+                    chrome.scripting.executeScript({
+                        target: { tabId: tabId },
+                        files: ["./foreground.js"]
+                    }).then(() => {
+                        updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
+                        setTabs(updatedTabs)
+                        console.log(logMsg)
+                    })
+                }).catch(err => console.log(err));
+            
+            //existing tab in storage
+            } else { 
+                updatedTabs.tabs.forEach(tab => {
+                    if (tab.id == tabId) {
+                        tab.active = true;
+                    } else {
+                        tab.active = false;
+                    }
+                })
+                console.log(logMsg)
+            }
 
-        } else {
-            let updatedTabs: Tabs = data[TabsStorage]
-            updatedTabs.tabs.forEach(tab => {
-                if (tab.id == tabId) {
-                    tab.active = true;
-                } else {
-                    tab.active = false;
-                }
-            })
-            console.log("NEW:")
-            console.log(updatedTabs)
             setTabs(updatedTabs)
-        }
+        });
     })
 }
 
+//gone use this one for changing the tab b/w existing tabs (includes when u a close a tab and u auto go to another tab)
+//technically this one is fired when creating a new tab too but its kinda useless since the url isnt ready at this point so cant inject script yet
 chrome.tabs.onActivated.addListener(activeTabInfo => {
-    console.log("wassup")
-    tabChange(activeTabInfo.tabId);
+
+    tabChange(activeTabInfo.tabId, "onActivated");
 })
 
-//Inject foreground into every tab that hasnt already been injected into
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && /^http/.test(tab.url)) {
+//SPECIAL NOTE FOR BELOW METHOD:
+//even if you change cur url to a chrome:// url, since the script has already been injected and tabid is not changing, nothing shuld really happen
+//active stays true and no errors pop up
 
-        console.log('yelloo')
-        tabChange(tabId);
-        
+//gonna use this one for when u create a new tab, or when you change the url of the cur tab ur on
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete') {
+        tabChange(tabId, "onUpdated");
     }
 });
 

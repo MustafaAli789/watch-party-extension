@@ -1,12 +1,9 @@
-import { Messages, Page, TabsStorage, PageStorage } from './models/constants'
-import { Tabs, Tab } from './models/activeTab'
+import { Messages, Page, TabsStorage } from './models/constants'
+import { Tabs, Tab, MessageObject } from './models/interfaces'
 
 chrome.runtime.onInstalled.addListener(() => {
     // default state goes here
     // this runs ONE TIME ONLY (unless the user reinstalls your extension)
-    chrome.storage.local.set({
-        [PageStorage]: Page.start
-    });
 
     let initialTabs: Tabs
     initialTabs = {} as Tabs
@@ -94,48 +91,38 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 // Message handler
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: MessageObject<null>, sender, sendResponse) => {
 
     chrome.storage.local.get(TabsStorage, (data: Tabs) => {
-        let activeTabId: number = data.tabs.find(tab => tab.active = true).id
+        let updatedTabs: Tabs = data
 
-        if (request.message === Messages.TOBG_VIDEO_ON_SCREEN) {
-            standardMessageToForeground(activeTabId, Messages.TOFG_VIDEO_ON_SCREEN, null, standardCallback(sendResponse))
-            return true
-        } else if (request.message === Messages.TOBG_CREATE_ROOM_IN_TAB) {
-
-            let updatedTabs: Tabs = data
+        if (request.message === Messages.TOBG_CREATE_ROOM_IN_TAB) {
             updatedTabs.tabs.find(tab => tab.active = true).channelOpen = true
-            chrome.storage.local.set({
-                TabsStorage: updatedTabs
-            });
-
-            standardMessageToForeground(activeTabId, Messages.TOFG_CREATE_ROOM_IN_TAB, request.payload, standardCallback(sendResponse))
-            return true
         } else if (request.message === Messages.TOBG_DISCONNECT) {
-            standardMessageToForeground(activeTabId, Messages.TOFG_DISCONNECT, request.payload, standardCallback(sendResponse))
-            return true
+            updatedTabs.tabs.find(tab => tab.active = true).channelOpen = false
         }
+
+        setTabs(updatedTabs);
     })
 });
 
-const standardMessageToForeground = (tabId: number, message: Messages, payload, callback: Function) => {
-    chrome.tabs.sendMessage(tabId, {
-        message: message,
-        payload: payload
-    }, resp => callback(resp))
-}
+// const standardMessageToForeground = (tabId: number, message: Messages, payload, callback: Function) => {
+//     chrome.tabs.sendMessage(tabId, {
+//         message: message,
+//         payload: payload
+//     }, resp => callback(resp))
+// }
 
-//Send success or failure and pass on payload
-const standardCallback = (sendResponse) => (resp) => {
-    if (resp.status === Messages.SUCCESS) {
-        sendResponse({
-            status: Messages.SUCCESS,
-            payload: resp.payload
-        })
-    } else {
-        sendResponse({
-            status: Messages.FAILURE
-        })
-    }
-}
+// //Send success or failure and pass on payload
+// const standardCallback = (sendResponse) => (resp) => {
+//     if (resp.status === Messages.SUCCESS) {
+//         sendResponse({
+//             status: Messages.SUCCESS,
+//             payload: resp.payload
+//         })
+//     } else {
+//         sendResponse({
+//             status: Messages.FAILURE
+//         })
+//     }
+// }

@@ -5,6 +5,7 @@
 import { Messages } from './models/constants'
 import SocketEvents from '../socketEvents'
 import { Socket, io } from 'socket.io-client'; 
+import { MessageObject, NewRoomPayload, ResponseObject, SocketRoomCreatedPayload, User } from './models/interfaces';
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
@@ -20,7 +21,7 @@ const guid = (): String => {
     return s4() + s4() + '-' + s4() + '-' + s4();
 }
 
-const establishSocketConnection = ({roomName, userName}, sendResponse) => {
+const establishSocketConnection = ({roomName, userName}:NewRoomPayload, sendResponse) => {
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
@@ -32,38 +33,39 @@ const establishSocketConnection = ({roomName, userName}, sendResponse) => {
         // shouldnt happen theoretically
         alert(err)
     })
-    socket.on(SocketEvents.CREATED_ROOM, ({payload}) => {
+    socket.on(SocketEvents.CREATED_ROOM, (data: { payload: Array<User> }) => {
+        let users: Array<User> = data.payload
         sendResponse({
             status: Messages.SUCCESS,
-            payload: {users: payload, roomId: roomId}
-        })
+            payload: {users: users, roomId: roomId}
+        } as ResponseObject<SocketRoomCreatedPayload>)
     });
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
     if (request.message === Messages.TOFG_VIDEO_ON_SCREEN) {
         vidElem = document.querySelector('video')
         if (vidElem != null && vidElem != undefined) {
             sendResponse({
                 status: Messages.SUCCESS,
                 payload: true
-            })
+            } as ResponseObject<boolean>)
         } else {
             sendResponse({
                 status: Messages.SUCCESS,
                 payload: false
-            })
+            } as ResponseObject<boolean>)
             alert("There must be a video on screen to create or join a room")
         }
 
         return true;
     }  else if (request.message === Messages.TOFG_CREATE_ROOM_IN_TAB) {
-        establishSocketConnection(request.payload, sendResponse)
+        establishSocketConnection(<NewRoomPayload>request.payload, sendResponse)
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
         socket.emit(SocketEvents.FORCE_DISCONNECT)
         sendResponse({
             status: Messages.SUCCESS
-        })
+        } as ResponseObject<null>)
     }
 });

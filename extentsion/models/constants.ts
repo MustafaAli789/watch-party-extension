@@ -1,6 +1,6 @@
 export enum Page{
-    start,
-    main
+    START,
+    MAIN
 }
 
 export enum Messages{
@@ -15,4 +15,3 @@ export enum Messages{
 }
 
 export const TabsStorage = "active_tabs_watchparty"
-export const PageStorage = "page_watchparty"

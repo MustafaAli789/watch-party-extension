@@ -11,8 +11,8 @@
 <body>
     <div id="header">
         <div class="head">
-            <img src="../images/icon-128x128.png">
-            <h1><span class="name" >Watch</span> Party</h1>
+            <img class="logoImg" src="../images/icon-128x128.png">
+            <h1><span class="whiteSpan">Watch</span> Party</h1>
         </div>
         <div class="header_divider_container">
             <div class="header_divider orange"></div>
@@ -23,27 +23,27 @@
 
     <div id="startPage">
         <div class="addItemContainer">
-            <input id="roomInput" type="text" name="roomInput" placeholder="Enter room name or id!">
-            <input id="nameInput" type="text" name="nameInput" placeholder="Enter your name!">
+            <input class="roomInput" type="text" name="roomInput" placeholder="Enter room name or id!">
+            <input class="nameInput" type="text" name="nameInput" placeholder="Enter your name!">
             <p class="error hidden"></p>
-            <button id="newRoomBtn" class="greenButton styledButton">New Room</button>
-            <button id="joinRoomBtn" class="orangeButton styledButton">Join Room</button>
+            <button class="newRoomBtn" class="green styledButton">New Room</button>
+            <button class="joinRoomBtn" class="orange2 styledButton">Join Room</button>
         </div>
     </div>
 
     <div id="mainPage">
         <div class="head" style="padding: 5px;">
-            <img src="../images/icon-128x128.png">
-            <h1>Room <span class="roomName"></span></h1>
+            <img class="logoImg2" src="../images/icon-128x128.png">
+            <h1>Room <span class="roomName whiteSpan"></span></h1>
         </div>
         <div class="roomIdContainer">
-            <h3>RoomCode: <span id="roomId" tabindex="0"></span></h3>
-            <img id="copyImgBtn" src="../images/copy.png" title="Copy to clipboard">
+            <h3>RoomCode: <span class="roomId" tabindex="0"></span></h3>
+            <img class="copyImgBtn" src="../images/copy.png" title="Copy to clipboard">
         </div>
         <div class="users">
             <h3>Users in Room</h3>
         </div>
-        <button id="backBtn" class="blue styledButton">Leave Room</button>
+        <button class="backBtn" class="blue styledButton">Leave Room</button>
     </div>
 
 </body>

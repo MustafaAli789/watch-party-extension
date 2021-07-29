@@ -1,26 +1,87 @@
+/* -----GENERAL----- */
 html, body {
     width: 320px;
     height: fit-content;
     background-color: #bef1ed;
 }
-.hidden{
-    display: none;
-}
-.head{
+
+/* -----HEADER SPECIFIC----- */
+#header .head{
     display: flex;
     align-items: center;
     justify-content: center;
 }
-h1{
+#header .head .logoImg{
+    height: 45px;
+    width: 45px;
+}
+#header .head h1{
     padding: 0 10px;
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
     color: #525252;
     margin-left: 20px;
 }
-.head img{
-    height: 45px;
-    width: 45px;
+#header .header_divider_container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#header .header_divider_container .header_divider{
+    height: 5px;
+    width: 80px;
+}
+
+/* -----START PAGE SPECIFIC----- */
+#startPage .addItemContainer input{
+    width: 300px;
+    height: 30px;
+    text-align: center;
+    font-size: 15px;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Roboto', sans-serif;
+    margin-top: 5px;
+}
+#startPage .addItemContainer .roomInput {
+    margin-top: 25px;
+}
+#startPage .addItemContainer error {
+    color: red;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    margin: 2px 0px 2px 0px;
+}
+#startPage .addItemContainer .newRoomBtn {
+    margin-top: 20px;
+}
+#startPage .addItemContainer .newRoomBtn:hover{
+    background-color: green;
+    cursor: pointer;
+}
+#startPage .addItemContainer .joinRoomBtn:hover{
+    background-color: #ad911f;
+    cursor: pointer;
+}
+#startPage .addItemContainer .backBtn:hover{
+    background-color: #4888a1;
+    cursor: pointer;
+}
+
+/* -----MAIN PAGE SPECIFIC----- */
+#mainPage .header {
+    padding: 5px;
+}
+#mainPage .head .logoImg2 {
+    width: 32px;
+    height: 32px;
+}
+#mainPage .head h1{
+    margin: 0px 0px 0px 10px;
+}
+#mainPage .roomIdContainer {
+    display: flex;
+    align-items: center;
 }
 #mainPage .roomIdContainer h3{
     padding: 0 10px;
@@ -28,18 +89,10 @@ h1{
     font-weight: 700;
     color: black;
 }
-#mainPage h1{
-    margin: 0px 0px 0px 10px;
+#mainPage .roomIdContainer .roomId{
+    color: #525252
 }
-#mainPage .head img {
-    width: 32px;
-    height: 32px;
-}
-#mainPage .roomIdContainer {
-    display: flex;
-    align-items: center;
-}
-#mainPage .roomIdContainer img {
+#mainPage .roomIdContainer .copyImgBtn {
     width: 15px;
     height: 15px;
     margin-bottom: 2px;
@@ -52,33 +105,23 @@ h1{
     margin-right: 30px;
     margin-bottom: 10px;
 }
-#mainPage .userElem{
-    padding: 4px;
-    background-color: #f1a2a2;
-    border-radius: 4px;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 400;
-}
 #mainPage .users h3{
     font-family: 'Roboto', sans-serif;
     font-weight: 700;
     color: black;
     margin: 0px 0px 5px 0px;
 }
-#roomId {
-    color: #525252
+#mainPage .users .userElem{
+    padding: 4px;
+    background-color: #f1a2a2;
+    border-radius: 4px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
 }
-.name, .roomName{
+
+/* -----COMMON----- */
+.whiteSpan{
     color: white;
-}
-.header_divider_container{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.header_divider{
-    height: 5px;
-    width: 80px;
 }
 .red{
     background-color: red;
@@ -89,30 +132,11 @@ h1{
 .blue{
     background-color: #63c1e6;
 }
-.greenButton{
-    background-color: #63b931;
-}
-.orangeButton{
+.orange2{
     background-color: #d0af25;
 }
-.addItemContainer input{
-    width: 300px;
-    height: 30px;
-    text-align: center;
-    font-size: 15px;
-    border: none;
-    border-radius: 3px;
-    font-family: 'Roboto', sans-serif;
-    margin-top: 5px;
-}
-#roomInput {
-    margin-top: 25px;
-}
-.error {
-    color: red;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 400;
-    margin: 2px 0px 2px 0px;
+.green {
+    background-color: #63b931;
 }
 .styledButton{
     margin-top: 1px;
@@ -126,18 +150,6 @@ h1{
     font-size: 17px;
     transition: background-color 1s;
 }
-#newRoomBtn {
-    margin-top: 20px;
-}
-#newRoomBtn:hover{
-    background-color: green;
-    cursor: pointer;
-}
-#joinRoomBtn:hover{
-    background-color: #ad911f;
-    cursor: pointer;
-}
-#backBtn:hover{
-    background-color: #4888a1;
-    cursor: pointer;
+.hidden{
+    display: none;
 }

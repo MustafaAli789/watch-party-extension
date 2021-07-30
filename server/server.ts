@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
-import { addUserToRoom, removeUser, addRoom, getUsersInRoom, User, Room } from './util'
-import SocketEvents from '../socketEvents'
+import { addUserToRoom, removeUser, addRoom, getUsersInRoom } from './util'
+import SocketEvents from '../sharedmodels/socketEvents'
 
 const express = require('express');
 const app = express();

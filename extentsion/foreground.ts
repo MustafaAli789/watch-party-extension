@@ -3,7 +3,7 @@
 // was already inserted before.
 //Guard to make sure that were not injecting a script over and over when changing tabs back and forth
 import { Messages } from './models/constants'
-import SocketEvents from '../socketEvents'
+import SocketEvents from '../sharedmodels/socketEvents'
 import { Socket, io } from 'socket.io-client'; 
 import { MessageObject, NewRoomPayload, ResponseObject, SocketRoomCreatedPayload, User } from './models/interfaces';
 

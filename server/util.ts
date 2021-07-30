@@ -1,8 +1,11 @@
-export class User {
-    userId: String;
-    userName: String;
-    roomId: String;
-    constructor(userId: String, userName: String, roomId:String) {
+import { Room } from '../sharedmodels/room'
+import { User } from '../sharedmodels/user'
+
+export class UserImpl implements User {
+    userId: string;
+    userName: string;
+    roomId: string;
+    constructor(userId: string, userName: string, roomId: string) {
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;
@@ -10,7 +13,7 @@ export class User {
     
 }   
 
-export class Room {
+export class RoomImpl implements Room {
     roomId: String;
     roomName: String;
     users: User[] = [];
@@ -22,7 +25,7 @@ export class Room {
     addUser = (user: User): void => {
         this.users.push(user)
     }
-    removeUserFromRoom = (userId: String): User => {
+    removeUserFromRoom = (userId: string): User => {
         let userToDel: User;
         let indToDel: number = this.users.map(user => user.userId).indexOf(userId)
         if (indToDel != null && indToDel != undefined) {
@@ -38,11 +41,11 @@ export class Room {
 const rooms: Array<Room> = []
 
 export const addRoom = (roomId: String, roomName: String): void => {
-    rooms.push(new Room(roomId, roomName))
+    rooms.push(new RoomImpl(roomId, roomName))
 }
 
-export const addUserToRoom = (userId: String, userName:String, roomId: String): {error: String, user: User} => {
-    let uName: String = userName.trim().toLowerCase();
+export const addUserToRoom = (userId: string, userName: string, roomId: string): {error: string, user: User} => {
+    let uName: string = userName.trim().toLowerCase();
 
     const existingRoom: Room = rooms.find(room => room.roomId == roomId)
 
@@ -50,13 +53,13 @@ export const addUserToRoom = (userId: String, userName:String, roomId: String): 
         return {error:  `Room with id ${roomId} does not exist.`, user: null}
     }
 
-    const user: User = new User(userId, uName, roomId)
+    const user: User = new UserImpl(userId, uName, roomId)
     existingRoom.addUser(user)
 
     return { user, error: null }
 }
 
-export const removeUser = (userId: String): { deletedUser: User, error: String } => {
+export const removeUser = (userId: string): { deletedUser: User, error: String } => {
     let deletedUser: User
     for (let i =0; i<rooms.length; i++) {
         deletedUser = rooms[i].removeUserFromRoom(userId)
@@ -84,4 +87,3 @@ export const getUsersInRoom = (roomId: String): Array<User> => {
     return []
 }
 
-//module.exports={ addRoom, removeUser, addUserToRoom, getUsersInRoom }

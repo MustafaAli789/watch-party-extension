@@ -1,15 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUsersInRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.Room = exports.User = void 0;
-class User {
+exports.getRoomFromUserId = exports.getRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.RoomImpl = exports.UserImpl = void 0;
+class UserImpl {
     constructor(userId, userName, roomId) {
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;
     }
 }
-exports.User = User;
-class Room {
+exports.UserImpl = UserImpl;
+class RoomImpl {
     constructor(roomId, roomName) {
         this.users = [];
         this.addUser = (user) => {
@@ -31,10 +31,10 @@ class Room {
         this.roomName = roomName;
     }
 }
-exports.Room = Room;
+exports.RoomImpl = RoomImpl;
 const rooms = [];
 const addRoom = (roomId, roomName) => {
-    rooms.push(new Room(roomId, roomName));
+    rooms.push(new RoomImpl(roomId, roomName));
 };
 exports.addRoom = addRoom;
 const addUserToRoom = (userId, userName, roomId) => {
@@ -43,16 +43,16 @@ const addUserToRoom = (userId, userName, roomId) => {
     if (!existingRoom) {
         return { error: `Room with id ${roomId} does not exist.`, user: null };
     }
-    const user = new User(userId, uName, roomId);
+    const user = new UserImpl(userId, uName, roomId);
     existingRoom.addUser(user);
     return { user, error: null };
 };
 exports.addUserToRoom = addUserToRoom;
 const removeUser = (userId) => {
     let deletedUser;
-    for (let i = 0; i < rooms.length; i++) {
+    for (let i = rooms.length - 1; i >= 0; i--) {
         deletedUser = rooms[i].removeUserFromRoom(userId);
-        if (deletedUser != null) {
+        if (deletedUser != null && deletedUser != undefined) {
             //special check to see if room empty i.e last person in room left
             if (rooms[i].users.length == 0) {
                 rooms.splice(i, 1);
@@ -63,15 +63,12 @@ const removeUser = (userId) => {
     return { error: `User with id ${userId} does not exist`, deletedUser: null };
 };
 exports.removeUser = removeUser;
-const getUsersInRoom = (roomId) => {
-    for (let i = 0; i < rooms.length; i++) {
-        let room = rooms[i];
-        if (room.roomId == roomId) {
-            return room.users;
-        }
-    }
-    return [];
+const getRoom = (roomId) => {
+    return rooms.find(room => room.roomId === roomId);
 };
-exports.getUsersInRoom = getUsersInRoom;
-//module.exports={ addRoom, removeUser, addUserToRoom, getUsersInRoom }
+exports.getRoom = getRoom;
+const getRoomFromUserId = (userId) => {
+    return rooms.find(room => room.users.find(user => user.userId === userId));
+};
+exports.getRoomFromUserId = getRoomFromUserId;
 //# sourceMappingURL=util.js.map

@@ -14,10 +14,10 @@ export class UserImpl implements User {
 }   
 
 export class RoomImpl implements Room {
-    roomId: String;
-    roomName: String;
+    roomId: string;
+    roomName: string;
     users: User[] = [];
-    constructor(roomId: String, roomName: String) {
+    constructor(roomId: string, roomName: string) {
         this.roomId = roomId;
         this.roomName = roomName
     }
@@ -40,7 +40,7 @@ export class RoomImpl implements Room {
 
 const rooms: Array<Room> = []
 
-export const addRoom = (roomId: String, roomName: String): void => {
+export const addRoom = (roomId: string, roomName: string): void => {
     rooms.push(new RoomImpl(roomId, roomName))
 }
 
@@ -77,13 +77,11 @@ export const removeUser = (userId: string): { deletedUser: User, error: String }
     return {error: `User with id ${userId} does not exist`, deletedUser: null}
 }
 
-export const getUsersInRoom = (roomId: String): Array<User> => {
-    for (let i =0; i<rooms.length; i++) {
-        let room: Room = rooms[i];
-        if (room.roomId == roomId) {
-            return room.users
-        }
-    }
-    return []
+export const getRoom = (roomId: string): Room => {
+    return rooms.find(room => room.roomId === roomId)
+}
+
+export const getRoomFromUserId = (userId: string): Room => {
+    return rooms.find(room => room.users.find(user => user.userId === userId))
 }
 

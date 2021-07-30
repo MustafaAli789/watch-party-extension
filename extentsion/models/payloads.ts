@@ -1,13 +1,11 @@
-import { User } from "../../sharedmodels/user";
+import { Room } from "../../sharedmodels/room";
 
-
-//Payloads
-export interface NewRoomPayload {
+//Payloads used in frontend only
+export interface ExtensionNewRoomPayload {
     userName: string,
     roomName: string
 }
-export interface SocketRoomCreatedPayload {
-    users: Array<User>,
-    roomId: string
+export interface ExtensionRoomPayload {
+    room: Room
 }
 

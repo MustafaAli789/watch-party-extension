@@ -1,6 +1,8 @@
 import { Server, Socket } from 'socket.io';
-import { addUserToRoom, removeUser, addRoom, getUsersInRoom } from './util'
-import SocketEvents from '../sharedmodels/socketEvents'
+import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId } from './util'
+import { SocketEvents, RoomAction } from '../sharedmodels/constants'
+
+import { SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload } from '../sharedmodels/payloads'
 
 const express = require('express');
 const app = express();
@@ -12,32 +14,46 @@ io.on(SocketEvents.CONNECTION, (socket) => {
 
   console.log('A user connected');
   
-  socket.on(SocketEvents.JOIN, ({roomName, userName, roomId, action}, callback) => {
+  socket.on(SocketEvents.JOIN, (joinRoomData: SocketJoinRoomPayload, callback) => {
 
-    if (action == "CREATE") {
-      addRoom(roomId, roomName)
-      const { error, user } = addUserToRoom(socket.id, userName, roomId)
+    if (!joinRoomData.roomId) {
+      return callback('Missing roomid')
+    }
 
-      if (error) {
-        console.log("shouldnt happen theoretically")
-        return
+    if (joinRoomData.action == RoomAction.CREATE) {
+
+      if (!joinRoomData.roomName) {
+        return callback('RoomName cannot be empty when creating a room.')
       }
 
-      socket.join(roomId)
-      socket.emit(SocketEvents.CREATED_ROOM, { payload: getUsersInRoom(roomId) })
-    } else if (action == "JOIN"){
-      const { error, user } = addUserToRoom(socket.id, userName, roomId)
+      addRoom(joinRoomData.roomId, joinRoomData.roomName)
+      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId)
+
+      if (error) {
+        console.log('shouldnt happen')
+        return callback(error)
+      }
+
+      socket.join(joinRoomData.roomId)
+      socket.emit(SocketEvents.CREATED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+    } else if (joinRoomData.action == RoomAction.JOIN){
+      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId)
 
       if (error) {
         return callback(error)
       }
 
-      socket.emit(SocketEvents.JOINED_ROOM, { payload: `You have successfuly joined room ${roomName}` })
-      io.to(roomId).emit(SocketEvents.ROOM_USERS_DATA, { payload: getUsersInRoom(roomId) })
+      socket.emit(SocketEvents.JOINED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+      socket.to(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+      socket.to(joinRoomData.roomId).emit(SocketEvents.USER_CONNECTED, { message: `User with name: ${joinRoomData.userName} has joined the room` } as SocketUserChangePayload)
     } else {
-      callback('Invalid action. Must be JOIN or CREATE')
+      callback(`Invalid action. Must be ${RoomAction.CREATE} OR ${RoomAction.JOIN}`)
     }
   });
+
+  socket.on(SocketEvents.GET_ROOM_DATA, () => {
+    socket.emit(SocketEvents.RECIEVE_ROOM_DATA, { room: getRoomFromUserId(socket.id) } as SocketRoomDataPayload)
+  })
 
   socket.on(SocketEvents.DISCONNECT, () => {
     disconnectSocket(socket, io)
@@ -60,8 +76,8 @@ function disconnectSocket(socket: Socket, io) {
     return false
   }
 
-  io.to(deletedUser.roomId).emit(SocketEvents.USER_DISCONNECTED, { payload: `User with name: ${deletedUser.userName} has left the room` })
-  io.to(deletedUser.roomId).emit(SocketEvents.ROOM_USERS_DATA, { payload: getUsersInRoom(deletedUser.roomId) })
+  socket.to(deletedUser.roomId).emit(SocketEvents.USER_DISCONNECTED, { message: `User with name: ${deletedUser.userName} has left the room` } as SocketUserChangePayload)
+  socket.to(deletedUser.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(deletedUser.roomId) } as SocketRoomDataPayload)
   return true
 }
 

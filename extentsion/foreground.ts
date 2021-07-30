@@ -1,8 +1,9 @@
 import { Messages } from './models/constants'
-import { NewRoomPayload, SocketRoomCreatedPayload } from './models/payloads';
+import { ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
-import SocketEvents from '../sharedmodels/socketEvents'
+import { SocketEvents, RoomAction } from '../sharedmodels/constants'
+import {  SocketJoinRoomPayload, SocketRoomDataPayload } from '../sharedmodels/payloads'
 import { User } from '../sharedmodels/user'
 
 import { Socket, io } from 'socket.io-client'; 
@@ -12,7 +13,7 @@ var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
 
 //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
-const guid = (): String => {
+const guid = (): string => {
     let s4 = () => {
         return Math.floor((1 + Math.random()) * 0x10000)
             .toString(16)
@@ -22,25 +23,37 @@ const guid = (): String => {
     return s4() + s4() + '-' + s4() + '-' + s4();
 }
 
-const establishSocketConnection = ({roomName, userName}:NewRoomPayload, sendResponse) => {
+const establishSocketConnection = (newRoomData: ExtensionNewRoomPayload, sendResponse) => {
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
     //theoretically should be unique
-    let roomId: String = guid()
+    let roomId: string = guid()
 
-    socket.emit(SocketEvents.JOIN, {roomName: roomName, userName: userName, roomId: roomId, action: "CREATE"}, (err) => {
-        // shouldnt happen theoretically
+    let joinRoomData: SocketJoinRoomPayload = {roomName: newRoomData.roomName, userName: newRoomData.userName, roomId: roomId, action: RoomAction.CREATE}
+
+    socket.emit(SocketEvents.JOIN, joinRoomData, (err) => {
         alert(err)
     })
-    socket.on(SocketEvents.CREATED_ROOM, (data: { payload: Array<User> }) => {
-        let users: Array<User> = data.payload
+    socket.on(SocketEvents.CREATED_ROOM, (data: SocketRoomDataPayload) => {
         sendResponse({
             status: Messages.SUCCESS,
-            payload: {users: users, roomId: roomId}
-        } as ResponseObject<SocketRoomCreatedPayload>)
+            payload: {room: data.room}
+        } as ResponseObject<ExtensionRoomPayload>)
     });
+}
+
+const retrieveRoomData = (sendResponse) => {
+    socket.emit(SocketEvents.GET_ROOM_DATA)
+
+    //this could be an issue with multiple of these socket connections being opened
+    socket.on(SocketEvents.RECIEVE_ROOM_DATA, (data: SocketRoomDataPayload) => {
+        sendResponse({
+            status: Messages.SUCCESS,
+            payload: {room: data.room}
+        } as ResponseObject<ExtensionRoomPayload>)
+    })
 }
 
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
@@ -61,12 +74,15 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
 
         return true;
     }  else if (request.message === Messages.TOFG_CREATE_ROOM_IN_TAB) {
-        establishSocketConnection(<NewRoomPayload>request.payload, sendResponse)
+        establishSocketConnection(<ExtensionNewRoomPayload>request.payload, sendResponse)
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
         socket.emit(SocketEvents.FORCE_DISCONNECT)
         sendResponse({
             status: Messages.SUCCESS
         } as ResponseObject<null>)
+    } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
+        retrieveRoomData(sendResponse)
+        return true
     }
 });

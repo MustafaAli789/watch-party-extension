@@ -1,10 +1,11 @@
 import { Messages, TabsStorage, Page } from './models/constants'
-import { NewRoomPayload, SocketRoomCreatedPayload } from './models/payloads';
+import { ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { Tabs } from './models/tabs';
 import { PageMetadata } from './models/pagemetadata';
 
 import { User } from '../sharedmodels/user'
+import {  } from '../sharedmodels/payloads'
 
 //Containers
 const startPage: HTMLDivElement = document.querySelector("#startPage");
@@ -35,11 +36,14 @@ chrome.storage.local.get(TabsStorage, data => {
     if (tabsData.tabs.find(tab => tab.active)?.channelOpen) {
         pageMetadata.pageType = Page.MAIN;
 
-        //retrieve data from socket connection about room metadata here
-        //mocked for now
-        pageMetadata.roomId = "MOCKED_roomId";
-        pageMetadata.roomName = "MOCKED_roomName";
-
+        chrome.tabs.sendMessage(tabsData.tabs.find(tab => tab.active).id, {
+            message: Messages.TOFG_RETRIEVE_ROOM_DATA
+        } as MessageObject<null>, (resp: ResponseObject<ExtensionRoomPayload>) => {
+            pageMetadata.roomId = resp.payload.room.roomId
+            pageMetadata.roomName = resp.payload.room.roomName
+            updateMainUsers(resp.payload.room.users)
+            changePage(pageMetadata)
+        })  
     }
     changePage(pageMetadata);
 })
@@ -92,18 +96,18 @@ const createNewRoomWithValidation = () => {
 
         chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
             if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
-                let messageObject: MessageObject<NewRoomPayload> = { 
+                let messageObject: MessageObject<ExtensionNewRoomPayload> = { 
                     message: Messages.TOFG_CREATE_ROOM_IN_TAB, 
                     payload: {
                         roomName: roomNameInput.value.trim(), 
                         userName: nameInput.value
                     }
                 }
-                chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<SocketRoomCreatedPayload>) => {
+                chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ExtensionRoomPayload>) => {
                     if (resp.status === Messages.SUCCESS) {
                         chrome.runtime.sendMessage({ message: Messages.TOBG_CREATE_ROOM_IN_TAB } as MessageObject<null>)
-                        changePage( { pageType: Page.MAIN, roomId: resp.payload.roomId, roomName: nameInput.value } as PageMetadata)
-                        updateMainUsers(resp.payload.users)
+                        changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
+                        updateMainUsers(resp.payload.room.users)
                     }
                 })
             }

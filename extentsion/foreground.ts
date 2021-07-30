@@ -1,11 +1,12 @@
-//https://stackoverflow.com/questions/34528785/chrome-extension-checking-if-content-script-has-been-injected-or-not
-// Wrapping in a function to not leak/modify variables if the script
-// was already inserted before.
-//Guard to make sure that were not injecting a script over and over when changing tabs back and forth
 import { Messages } from './models/constants'
+import { NewRoomPayload, SocketRoomCreatedPayload } from './models/payloads';
+import { MessageObject, ResponseObject,  } from './models/messagepassing';
+
 import SocketEvents from '../sharedmodels/socketEvents'
+import { User } from '../sharedmodels/user'
+
 import { Socket, io } from 'socket.io-client'; 
-import { MessageObject, NewRoomPayload, ResponseObject, SocketRoomCreatedPayload, User } from './models/interfaces';
+
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket

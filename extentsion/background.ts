@@ -1,5 +1,7 @@
 import { Messages, Page, TabsStorage } from './models/constants'
-import { Tabs, Tab, MessageObject } from './models/interfaces'
+import { Tabs, Tab } from './models/tabs'
+import { MessageObject } from './models/messagepassing'
+
 
 chrome.runtime.onInstalled.addListener(() => {
     // default state goes here
@@ -91,7 +93,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 // Message handler
-chrome.runtime.onMessage.addListener((request: MessageObject<null>, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
 
     chrome.storage.local.get(TabsStorage, (data: Tabs) => {
         let updatedTabs: Tabs = data

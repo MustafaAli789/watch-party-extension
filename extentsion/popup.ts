@@ -1,5 +1,10 @@
-import { Messages, Page, TabsStorage } from './models/constants';
-import { MessageObject, NewRoomPayload, PageMetadata, ResponseObject, SocketRoomCreatedPayload, Tabs, User } from './models/interfaces';
+import { Messages, TabsStorage, Page } from './models/constants'
+import { NewRoomPayload, SocketRoomCreatedPayload } from './models/payloads';
+import { MessageObject, ResponseObject,  } from './models/messagepassing';
+import { Tabs } from './models/tabs';
+import { PageMetadata } from './models/pagemetadata';
+
+import { User } from '../sharedmodels/user'
 
 //Containers
 const startPage: HTMLDivElement = document.querySelector("#startPage");

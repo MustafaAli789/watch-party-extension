@@ -76,6 +76,9 @@ html, body {
     width: 32px;
     height: 32px;
 }
+#mainPage .head{
+    display: flex;
+}
 #mainPage .head h1{
     margin: 0px 0px 0px 10px;
 }

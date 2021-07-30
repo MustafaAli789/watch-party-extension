@@ -11,12 +11,12 @@ import {  } from '../sharedmodels/payloads'
 const startPage: HTMLDivElement = document.querySelector("#startPage");
 const mainPage: HTMLDivElement = document.querySelector("#mainPage");
 const header: HTMLDivElement = document.querySelector("#header");
-const usersContainer: HTMLDivElement = document.querySelector("#main .users");
+const usersContainer: HTMLDivElement = document.querySelector("#mainPage .users");
 
 //Bttons
 const newRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#startPage .addItemContainer .newRoomBtn");
 const joinRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#startPage .addItemContainer .joinRoomBtn");
-const leaveRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#startPage .addItemContainer .backBtn");
+const leaveRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .backBtn");
 const copyImgBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .roomIdContainer .copyImgBtn");
 
 //Inputs
@@ -69,7 +69,7 @@ newRoomBtn.addEventListener('click', _ => {
 
 leaveRoomBtn.addEventListener('click', _ => {
     chrome.storage.local.get(TabsStorage, data => {
-        let activeTabId: number = data.tabs.find(tab => tab.active = true).id;
+        let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
 
         chrome.runtime.sendMessage({
             message: Messages.TOBG_DISCONNECT
@@ -92,9 +92,10 @@ copyImgBtn.addEventListener('click', () => {
 const createNewRoomWithValidation = () => {
 
     chrome.storage.local.get(TabsStorage, data => {
-        let activeTabId: number = data.tabs.find(tab => tab.active = true).id;
+        let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
 
-        chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+        chrome.tabs.sendMessage(activeTabId, 
+            { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
             if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
                 let messageObject: MessageObject<ExtensionNewRoomPayload> = { 
                     message: Messages.TOFG_CREATE_ROOM_IN_TAB, 
@@ -103,7 +104,9 @@ const createNewRoomWithValidation = () => {
                         userName: nameInput.value
                     }
                 }
+                console.log("hello")
                 chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ExtensionRoomPayload>) => {
+                    console.log("saup")
                     if (resp.status === Messages.SUCCESS) {
                         chrome.runtime.sendMessage({ message: Messages.TOBG_CREATE_ROOM_IN_TAB } as MessageObject<null>)
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)

@@ -40,7 +40,10 @@ const tabChange = (tabId: number, logMsg: string) => {
             }
 
             //new tab not in storage
-            if (data[TabsStorage].tabs.find(tab => tab.id === tabId) == null) {
+            //special case where changing urls of a tab that prev had script injected needs to be injected again
+            //cause url change causes script to be lost rip
+            let existingTab = data[TabsStorage].tabs.find(tab => tab.id === tabId)
+            if (!existingTab || logMsg === "onUpdated") {
 
                 chrome.scripting.executeScript({
                     target: { tabId: tabId },
@@ -51,9 +54,14 @@ const tabChange = (tabId: number, logMsg: string) => {
                         target: { tabId: tabId },
                         files: ["./foreground.js"]
                     }).then(() => {
-                        updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
-                        setTabs(updatedTabs)
-                        console.log(logMsg)
+                        if (!existingTab) {
+                            updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
+                            setTabs(updatedTabs)
+                            console.log(logMsg)
+                        } else if (logMsg === "onUpdated") { //changing url of a tab should still keep it active
+                            updatedTabs.tabs.find(tab => tab.id === tabId).active = true
+                            setTabs(updatedTabs)
+                        }
                     })
                 }).catch(err => console.log(err));
             
@@ -96,12 +104,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
 
     chrome.storage.local.get(TabsStorage, (data: Tabs) => {
-        let updatedTabs: Tabs = data
+        let updatedTabs: Tabs = Object.assign({}, data[TabsStorage])
 
         if (request.message === Messages.TOBG_CREATE_ROOM_IN_TAB) {
-            updatedTabs.tabs.find(tab => tab.active = true).channelOpen = true
+            updatedTabs.tabs.find(tab => tab.active).channelOpen = true
         } else if (request.message === Messages.TOBG_DISCONNECT) {
-            updatedTabs.tabs.find(tab => tab.active = true).channelOpen = false
+            updatedTabs.tabs.find(tab => tab.active).channelOpen = false
         }
 
         setTabs(updatedTabs);

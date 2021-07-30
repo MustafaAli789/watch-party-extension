@@ -3,7 +3,7 @@ const path = require( 'path' );
 module.exports = {
 
     // bundling mode
-    mode: 'development',
+    mode: 'production',
 
     // entry files
     entry: {
@@ -22,7 +22,7 @@ module.exports = {
     resolve: {
         extensions: [ '.ts', '.js' ],
     },
-    devtool: 'inline-source-map',
+    //devtool: 'inline-source-map',
     // loaders
     module: {
         rules: [

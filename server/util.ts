@@ -61,9 +61,9 @@ export const addUserToRoom = (userId: string, userName: string, roomId: string):
 
 export const removeUser = (userId: string): { deletedUser: User, error: String } => {
     let deletedUser: User
-    for (let i =0; i<rooms.length; i++) {
+    for (let i =rooms.length-1; i>=0; i--) {
         deletedUser = rooms[i].removeUserFromRoom(userId)
-        if(deletedUser != null) {
+        if(deletedUser != null && deletedUser != undefined) {
 
             //special check to see if room empty i.e last person in room left
             if (rooms[i].users.length == 0) {

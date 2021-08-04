@@ -1,13 +1,11 @@
-import { Messages, TabsStorage } from './models/constants'
+import { Messages } from './models/constants'
 import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction } from '../sharedmodels/constants'
 import {  SocketJoinRoomPayload, SocketRoomDataPayload } from '../sharedmodels/payloads'
-import { User } from '../sharedmodels/user'
 
 import { Socket, io } from 'socket.io-client'; 
-import { Tab, Tabs } from './models/tabs';
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket

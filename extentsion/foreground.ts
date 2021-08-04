@@ -1,4 +1,4 @@
-import { Messages } from './models/constants'
+import { Messages, TabsStorage } from './models/constants'
 import { ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
@@ -7,7 +7,7 @@ import {  SocketJoinRoomPayload, SocketRoomDataPayload } from '../sharedmodels/p
 import { User } from '../sharedmodels/user'
 
 import { Socket, io } from 'socket.io-client'; 
-
+import { Tab, Tabs } from './models/tabs';
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
@@ -84,5 +84,10 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
         retrieveRoomData(sendResponse)
         return true
+    } else if (request.message === Messages.TOFG_DO_YOU_EXIST) {
+        sendResponse({
+            status: Messages.SUCCESS,
+            payload: true
+        })
     }
 });

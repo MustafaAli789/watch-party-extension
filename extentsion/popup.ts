@@ -91,8 +91,12 @@ copyImgBtn.addEventListener('click', () => {
 
 const createNewRoomWithValidation = () => {
 
+    console.log("createNewRoomWithValidation")
+
     chrome.storage.local.get(TabsStorage, data => {
         let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
+
+        console.log("createNewRoomWithValidation inside")
 
         chrome.tabs.sendMessage(activeTabId, 
             { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {

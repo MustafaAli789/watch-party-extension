@@ -12,7 +12,8 @@ export enum Messages{
     TOFG_CREATE_ROOM_IN_TAB,
     TOBG_DISCONNECT,
     TOFG_DISCONNECT,
-    TOFG_RETRIEVE_ROOM_DATA
+    TOFG_RETRIEVE_ROOM_DATA,
+    TOFG_DO_YOU_EXIST
 }
 
 export const TabsStorage = "active_tabs_watchparty"

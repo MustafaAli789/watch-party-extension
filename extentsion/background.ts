@@ -1,6 +1,6 @@
 import { Messages, Page, TabsStorage } from './models/constants'
 import { Tabs, Tab } from './models/tabs'
-import { MessageObject } from './models/messagepassing'
+import { MessageObject, ResponseObject } from './models/messagepassing'
 
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -20,14 +20,18 @@ const setTabs = (tabs: Tabs) => {
     });
 }
 
-const tabChange = (tabId: number, logMsg: string) => {
+const setAllTabsToInactive = () => {
+    chrome.storage.local.get(TabsStorage, (data) => {
+        let updatedTabs: Tabs = Object.assign({}, data[TabsStorage])
+        updatedTabs.tabs.forEach(tab => tab.active = false)
+        setTabs(updatedTabs)
+    })
+}
+
+const tabChange = (tabId: number, event: string) => {
     chrome.storage.local.get(TabsStorage, (data) => {
 
         let updatedTabs: Tabs = Object.assign({}, data[TabsStorage])
-
-        //needs to be out here in case someone has a normal tab open but then opens a new chrome:// tab after
-        //the new tab wont be added to our tabs storage or injected but we do need all others tabs to be active false now
-        updatedTabs.tabs.forEach(tab => tab.active = false)
 
         chrome.tabs.query({}, tabs => {
 
@@ -41,29 +45,32 @@ const tabChange = (tabId: number, logMsg: string) => {
 
             //new tab not in storage
             //special case where changing urls of a tab that prev had script injected needs to be injected again
-            //cause url change causes script to be lost rip
+            //cause url change causes script to be lost
             let existingTab = data[TabsStorage].tabs.find(tab => tab.id === tabId)
-            if (!existingTab || logMsg === "onUpdated") {
+            if (!existingTab || event === "onUpdated") {
 
-                chrome.scripting.executeScript({
-                    target: { tabId: tabId },
-                    files: ["./socketio/socket.io.js"]
+                chrome.tabs.sendMessage(tabId, { message: Messages.TOFG_DO_YOU_EXIST } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+                    if (chrome.runtime.lastError) {
+
+                        // DOESNT EXIST CAN INJECT NOW
+                        console.log("INJECTING FOREGROUND WITH TABID: " + tabId)
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabId },
+                            files: ["./socketio/socket.io.js"]
+                        })
+                        .then(() => {
+                            chrome.scripting.executeScript({
+                                target: { tabId: tabId },
+                                files: ["./foreground.js"]
+                            }).then(() => {
+                                if (!existingTab) {
+                                    updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
+                                    setTabs(updatedTabs)
+                                }
+                            })
+                        }).catch(err => console.log(err));
+                    }
                 })
-                .then(() => {
-                    chrome.scripting.executeScript({
-                        target: { tabId: tabId },
-                        files: ["./foreground.js"]
-                    }).then(() => {
-                        if (!existingTab) {
-                            updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
-                            setTabs(updatedTabs)
-                            console.log(logMsg)
-                        } else if (logMsg === "onUpdated") { //changing url of a tab should still keep it active
-                            updatedTabs.tabs.find(tab => tab.id === tabId).active = true
-                            setTabs(updatedTabs)
-                        }
-                    })
-                }).catch(err => console.log(err));
             
             //existing tab in storage
             } else { 
@@ -74,7 +81,6 @@ const tabChange = (tabId: number, logMsg: string) => {
                         tab.active = false;
                     }
                 })
-                console.log(logMsg)
             }
 
             setTabs(updatedTabs)
@@ -85,18 +91,23 @@ const tabChange = (tabId: number, logMsg: string) => {
 //gone use this one for changing the tab b/w existing tabs (includes when u a close a tab and u auto go to another tab)
 //technically this one is fired when creating a new tab too but its kinda useless since the url isnt ready at this point so cant inject script yet
 chrome.tabs.onActivated.addListener(activeTabInfo => {
-
-    tabChange(activeTabInfo.tabId, "onActivated");
+    chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+        console.log(tabs)
+        if (/^http/.test(tabs[0].url)) {
+            tabChange(activeTabInfo.tabId, "onActivated");
+        } else { //non http url
+            setAllTabsToInactive()
+        }
+   })
 })
 
-//SPECIAL NOTE FOR BELOW METHOD:
-//even if you change cur url to a chrome:// url, since the script has already been injected and tabid is not changing, nothing shuld really happen
-//active stays true and no errors pop up
 
 //gonna use this one for when u create a new tab, or when you change the url of the cur tab ur on
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete') {
+    if (changeInfo.status == 'complete' && /^http/.test(tab.url)) {
         tabChange(tabId, "onUpdated");
+    } else if (!/^http/.test(tab.url)) { //not http url
+        setAllTabsToInactive()
     }
 });
 
@@ -114,6 +125,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
 
         setTabs(updatedTabs);
     })
+    return true
 });
 
 // const standardMessageToForeground = (tabId: number, message: Messages, payload, callback: Function) => {

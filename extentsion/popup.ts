@@ -1,7 +1,7 @@
 import { Messages, TabsStorage, Page } from './models/constants'
 import { ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
-import { Tabs } from './models/tabs';
+import { Tab, Tabs } from './models/tabs';
 import { PageMetadata } from './models/pagemetadata';
 
 import { User } from '../sharedmodels/user'
@@ -68,18 +68,25 @@ newRoomBtn.addEventListener('click', _ => {
 // })
 
 leaveRoomBtn.addEventListener('click', _ => {
+    leaveRoom()
+})
+
+const leaveRoom = () => {
     chrome.storage.local.get(TabsStorage, data => {
-        let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
+        let activeTab: Tab = data[TabsStorage].tabs.find(tab => tab.active);
+        if (!activeTab.channelOpen) {
+            return
+        }
 
         chrome.runtime.sendMessage({
             message: Messages.TOBG_DISCONNECT
         } as MessageObject<null>)
-        chrome.tabs.sendMessage(activeTabId, {
+        chrome.tabs.sendMessage(activeTab.id, {
             message: Messages.TOFG_DISCONNECT
         } as MessageObject<null>)
-        changePage({ pageType: Page.MAIN, roomId: null, roomName: "" })
+        changePage({ pageType: Page.START, roomId: null, roomName: "" })
     })
-})
+}
 
 copyImgBtn.addEventListener('click', () => {
     let roomIdVal = roomIdElem.innerHTML
@@ -91,12 +98,8 @@ copyImgBtn.addEventListener('click', () => {
 
 const createNewRoomWithValidation = () => {
 
-    console.log("createNewRoomWithValidation")
-
     chrome.storage.local.get(TabsStorage, data => {
         let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
-
-        console.log("createNewRoomWithValidation inside")
 
         chrome.tabs.sendMessage(activeTabId, 
             { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
@@ -108,9 +111,7 @@ const createNewRoomWithValidation = () => {
                         userName: nameInput.value
                     }
                 }
-                console.log("hello")
                 chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ExtensionRoomPayload>) => {
-                    console.log("saup")
                     if (resp.status === Messages.SUCCESS) {
                         chrome.runtime.sendMessage({ message: Messages.TOBG_CREATE_ROOM_IN_TAB } as MessageObject<null>)
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
@@ -150,5 +151,12 @@ const updateMainUsers = (users: Array<User>) => {
     });
 }
 
+// Message handler
+chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
+    if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
+        leaveRoom()
+    }
+    return true
+});
 
 

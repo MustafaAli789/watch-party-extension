@@ -67,8 +67,9 @@ const tabChange = (tabId: number, event: string) => {
                                     updatedTabs.tabs.push({ id: tabId, channelOpen: false, active: true } as Tab)
                                     setTabs(updatedTabs)
                                 } else { //i.e url change on existing tab
-                                    console.log("I dont know why I need this print statement here but if i get rid of it, stuff breaks")
-                                    chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM } as MessageObject<null>)
+                                    setTimeout(() => {
+                                        chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM } as MessageObject<null>)
+                                    }, 500)
                                 }
                             })
                         }).catch(err => console.log(err));

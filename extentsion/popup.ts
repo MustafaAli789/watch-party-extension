@@ -1,5 +1,5 @@
 import { Messages, TabsStorage, Page } from './models/constants'
-import { ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
+import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { Tab, Tabs } from './models/tabs';
 import { PageMetadata } from './models/pagemetadata';
@@ -64,8 +64,9 @@ newRoomBtn.addEventListener('click', _ => {
     createNewRoomWithValidation();
 })
 
-// joinRoomBtn.addEventListener('click', e => {
-// })
+joinRoomBtn.addEventListener('click', e => {
+    joinRoomWithValidation()
+})
 
 leaveRoomBtn.addEventListener('click', _ => {
     leaveRoom()
@@ -96,21 +97,34 @@ copyImgBtn.addEventListener('click', () => {
     })
 })
 
-const createNewRoomWithValidation = () => {
+const joinRoomWithValidation = () => {
+    let messageObject: MessageObject<ExtensionJoinRoomPayload> = { 
+        message: Messages.TOFG_JOIN_ROOM_IN_TAB, 
+        payload: {
+            roomId: roomNameInput.value.trim(), 
+            userName: nameInput.value
+        }
+    }
+    goIntoRoomWithValidation(messageObject)
+}
 
+const createNewRoomWithValidation = () => {
+    let messageObject: MessageObject<ExtensionNewRoomPayload> = { 
+        message: Messages.TOFG_CREATE_ROOM_IN_TAB, 
+        payload: {
+            roomName: roomNameInput.value.trim(), 
+            userName: nameInput.value
+        }
+    }
+    goIntoRoomWithValidation(messageObject)
+}
+
+const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
     chrome.storage.local.get(TabsStorage, data => {
         let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
 
-        chrome.tabs.sendMessage(activeTabId, 
-            { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+        chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
             if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
-                let messageObject: MessageObject<ExtensionNewRoomPayload> = { 
-                    message: Messages.TOFG_CREATE_ROOM_IN_TAB, 
-                    payload: {
-                        roomName: roomNameInput.value.trim(), 
-                        userName: nameInput.value
-                    }
-                }
                 chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ExtensionRoomPayload>) => {
                     if (resp.status === Messages.SUCCESS) {
                         chrome.runtime.sendMessage({ message: Messages.TOBG_CREATE_ROOM_IN_TAB } as MessageObject<null>)

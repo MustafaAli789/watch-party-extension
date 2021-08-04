@@ -1,5 +1,5 @@
 import { Messages, TabsStorage } from './models/constants'
-import { ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
+import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction } from '../sharedmodels/constants'
@@ -23,20 +23,27 @@ const guid = (): string => {
     return s4() + s4() + '-' + s4() + '-' + s4();
 }
 
-const establishSocketConnection = (newRoomData: ExtensionNewRoomPayload, sendResponse) => {
+const establishSocketConnectionForNewRoom = (newRoomData: ExtensionNewRoomPayload, sendResponse) => {
+    //theoretically should be unique
+    let roomId: string = guid()
+    let roomData: SocketJoinRoomPayload = {roomName: newRoomData.roomName, userName: newRoomData.userName, roomId: roomId, action: RoomAction.CREATE}
+    createSocketConnection(roomData, sendResponse, SocketEvents.CREATED_ROOM)
+}
+
+const establishSocketConnectionForExistingRoom = (joinRoomData: ExtensionJoinRoomPayload, sendResponse) => {
+    let roomData: SocketJoinRoomPayload = {roomName: null, userName: joinRoomData.userName, roomId: joinRoomData.roomId, action: RoomAction.JOIN}
+    createSocketConnection(roomData, sendResponse, SocketEvents.JOINED_ROOM)
+}
+
+const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, socketEvent: string) => {
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
-    //theoretically should be unique
-    let roomId: string = guid()
-
-    let joinRoomData: SocketJoinRoomPayload = {roomName: newRoomData.roomName, userName: newRoomData.userName, roomId: roomId, action: RoomAction.CREATE}
-
-    socket.emit(SocketEvents.JOIN, joinRoomData, (err) => {
+    socket.emit(SocketEvents.JOIN, roomData, (err) => {
         alert(err)
     })
-    socket.on(SocketEvents.CREATED_ROOM, (data: SocketRoomDataPayload) => {
+    socket.on(socketEvent, (data: SocketRoomDataPayload) => {
         sendResponse({
             status: Messages.SUCCESS,
             payload: {room: data.room}
@@ -74,7 +81,10 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
 
         return true;
     }  else if (request.message === Messages.TOFG_CREATE_ROOM_IN_TAB) {
-        establishSocketConnection(<ExtensionNewRoomPayload>request.payload, sendResponse)
+        establishSocketConnectionForNewRoom(<ExtensionNewRoomPayload>request.payload, sendResponse)
+        return true
+    } else if(request.message === Messages.TOFG_JOIN_ROOM_IN_TAB) {
+        establishSocketConnectionForExistingRoom(<ExtensionJoinRoomPayload>request.payload, sendResponse)
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
         socket.emit(SocketEvents.FORCE_DISCONNECT)

@@ -9,3 +9,8 @@ export interface ExtensionRoomPayload {
     room: Room
 }
 
+export interface ExtensionJoinRoomPayload {
+    userName: string,
+    roomId: string
+}
+

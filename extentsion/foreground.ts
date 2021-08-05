@@ -1,9 +1,9 @@
 import { Messages } from './models/constants'
-import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
+import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionUserChangePayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction } from '../sharedmodels/constants'
-import {  SocketJoinRoomPayload, SocketRoomDataPayload } from '../sharedmodels/payloads'
+import {  SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload } from '../sharedmodels/payloads'
 
 import { Socket, io } from 'socket.io-client'; 
 
@@ -47,6 +47,19 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, s
             payload: {room: data.room}
         } as ResponseObject<ExtensionRoomPayload>)
     });
+
+    socket.on(SocketEvents.ROOM_DATA, (data: SocketRoomDataPayload) => {
+        chrome.runtime.sendMessage({
+            message: Messages.TOPOPUP_ROOM_DATA,
+            payload: {room: data.room}
+        } as MessageObject<ExtensionRoomPayload>)
+    })
+    socket.on(SocketEvents.USER_CONNECTED, (data: SocketUserChangePayload) => {
+        chrome.runtime.sendMessage({
+            message: Messages.TOPOPUP_USER_CONNECTED,
+            payload: {message: data.message}
+        } as MessageObject<ExtensionUserChangePayload>)
+    })
 }
 
 const retrieveRoomData = (sendResponse) => {
@@ -96,6 +109,11 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         sendResponse({
             status: Messages.SUCCESS,
             payload: true
-        })
+        } as ResponseObject<boolean>)
+    } else if (request.message === Messages.TOFG_IS_CHANNEL_OPEN) {
+        sendResponse({
+            status: Messages.SUCCESS,
+            payload: socket !== undefined && socket !== null
+        } as ResponseObject<boolean>)
     }
 });

@@ -1,7 +1,6 @@
-import { Messages, TabsStorage, Page } from './models/constants'
-import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload } from './models/payloads';
+import { Messages, Page } from './models/constants'
+import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionUserChangePayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
-import { Tab, Tabs } from './models/tabs';
 import { PageMetadata } from './models/pagemetadata';
 
 import { User } from '../sharedmodels/user'
@@ -11,7 +10,7 @@ import {  } from '../sharedmodels/payloads'
 const startPage: HTMLDivElement = document.querySelector("#startPage");
 const mainPage: HTMLDivElement = document.querySelector("#mainPage");
 const header: HTMLDivElement = document.querySelector("#header");
-const usersContainer: HTMLDivElement = document.querySelector("#mainPage .users");
+const usersListContainer: HTMLDivElement = document.querySelector("#mainPage .users .usersList");
 
 //Bttons
 const newRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#startPage .addItemContainer .newRoomBtn");
@@ -28,23 +27,27 @@ const errorMsgElem: HTMLParagraphElement = document.querySelector("#startPage .a
 const roomIdElem: HTMLSpanElement = document.querySelector('#mainPage .roomIdContainer .roomId');
 const roomNameElem: HTMLHeadingElement = document.querySelector("#mainPage .head .roomName");
 
-
 //Initial open of popup
-chrome.storage.local.get(TabsStorage, data => {
-    let tabsData: Tabs = data[TabsStorage];
+chrome.tabs.query({active:true, currentWindow: true}, tabs => {
+    let activeTabId = tabs[0].id
     let pageMetadata: PageMetadata = <PageMetadata>{roomName: "", pageType: Page.START}
-    if (tabsData.tabs.find(tab => tab.active)?.channelOpen) {
-        pageMetadata.pageType = Page.MAIN;
 
-        chrome.tabs.sendMessage(tabsData.tabs.find(tab => tab.active).id, {
-            message: Messages.TOFG_RETRIEVE_ROOM_DATA
-        } as MessageObject<null>, (resp: ResponseObject<ExtensionRoomPayload>) => {
-            pageMetadata.roomId = resp.payload.room.roomId
-            pageMetadata.roomName = resp.payload.room.roomName
-            updateMainUsers(resp.payload.room.users)
-            changePage(pageMetadata)
-        })  
-    }
+    chrome.tabs.sendMessage(activeTabId, {
+        message: Messages.TOFG_IS_CHANNEL_OPEN
+    } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+        if (resp.status == Messages.SUCCESS && resp.payload) {
+            chrome.tabs.sendMessage(activeTabId, {
+                message: Messages.TOFG_RETRIEVE_ROOM_DATA
+            } as MessageObject<null>, (resp: ResponseObject<ExtensionRoomPayload>) => {
+                pageMetadata.roomId = resp.payload.room.roomId
+                pageMetadata.roomName = resp.payload.room.roomName
+                pageMetadata.pageType = Page.MAIN
+                updateMainUsers(resp.payload.room.users)
+                changePage(pageMetadata)
+            }) 
+        }
+    })
+
     changePage(pageMetadata);
 })
 
@@ -73,18 +76,17 @@ leaveRoomBtn.addEventListener('click', _ => {
 })
 
 const leaveRoom = () => {
-    chrome.storage.local.get(TabsStorage, data => {
-        let activeTab: Tab = data[TabsStorage].tabs.find(tab => tab.active);
-        if (!activeTab.channelOpen) {
-            return
-        }
-
-        chrome.runtime.sendMessage({
-            message: Messages.TOBG_DISCONNECT
-        } as MessageObject<null>)
-        chrome.tabs.sendMessage(activeTab.id, {
-            message: Messages.TOFG_DISCONNECT
-        } as MessageObject<null>)
+    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
+        let activeTabId = tabs[0].id
+        chrome.tabs.sendMessage(activeTabId, {
+            message: Messages.TOFG_IS_CHANNEL_OPEN
+        } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+            if (resp.status == Messages.SUCCESS && resp.payload) {
+                chrome.tabs.sendMessage(activeTabId, {
+                    message: Messages.TOFG_DISCONNECT
+                } as MessageObject<null>)
+            }
+        })
         changePage({ pageType: Page.START, roomId: null, roomName: "" })
     })
 }
@@ -120,21 +122,18 @@ const createNewRoomWithValidation = () => {
 }
 
 const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
-    chrome.storage.local.get(TabsStorage, data => {
-        let activeTabId: number = data[TabsStorage].tabs.find(tab => tab.active).id;
-
+    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
+        let activeTabId: number = tabs[0].id;
         chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
             if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
                 chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ExtensionRoomPayload>) => {
                     if (resp.status === Messages.SUCCESS) {
-                        chrome.runtime.sendMessage({ message: Messages.TOBG_CREATE_ROOM_IN_TAB } as MessageObject<null>)
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
                         updateMainUsers(resp.payload.room.users)
                     }
                 })
             }
         })
-        
     })
 }
 
@@ -157,11 +156,12 @@ const changePage = (pageMetadata: PageMetadata) => {
 }
 
 const updateMainUsers = (users: Array<User>) => {
+    usersListContainer.innerHTML = ""
     users.forEach(user => {
         let userElem = document.createElement("DIV");
         userElem.classList.add("userElem");
         userElem.innerHTML = user.userName;
-        usersContainer.append(userElem);
+        usersListContainer.append(userElem);
     });
 }
 
@@ -169,6 +169,12 @@ const updateMainUsers = (users: Array<User>) => {
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
     if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
         leaveRoom()
+    } else if (request.message === Messages.TOPOPUP_ROOM_DATA) {
+        let reqData = <ExtensionRoomPayload>request.payload
+        updateMainUsers(reqData.room.users)
+    } else if (request.message === Messages.TOPOPUP_USER_CONNECTED) {
+        let reqData = <ExtensionUserChangePayload>request.payload
+        //do something with the data now
     }
     return true
 });

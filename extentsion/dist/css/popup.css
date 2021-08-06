@@ -119,6 +119,9 @@ html, body {
     font-weight: 400;
     margin-top: 2px;
 }
+#mainPage .users .currentUser{
+    background-color: #63b931;
+}
 #mainPage .backBtn:hover{
     background-color: #4888a1;
     cursor: pointer;

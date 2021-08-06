@@ -33,7 +33,7 @@ const establishSocketConnectionForExistingRoom = (joinRoomData: ExtensionJoinRoo
     createSocketConnection(roomData, sendResponse, SocketEvents.JOINED_ROOM)
 }
 
-const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, socketEvent: string) => {
+const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, joinChannelEvent: string) => {
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
@@ -41,7 +41,8 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, s
     socket.emit(SocketEvents.JOIN, roomData, (err) => {
         alert(err)
     })
-    socket.on(socketEvent, (data: SocketRoomDataPayload) => {
+    socket.on(joinChannelEvent, (data: SocketRoomDataPayload) => {
+        data.room.users.find(user => user.userId === socket.id).current = true
         sendResponse({
             status: Messages.SUCCESS,
             payload: {room: data.room}
@@ -49,6 +50,7 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, s
     });
 
     socket.on(SocketEvents.ROOM_DATA, (data: SocketRoomDataPayload) => {
+        data.room.users.find(user => user.userId === socket.id).current = true
         chrome.runtime.sendMessage({
             message: Messages.TOPOPUP_ROOM_DATA,
             payload: {room: data.room}
@@ -60,6 +62,8 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, s
             payload: {message: data.message}
         } as MessageObject<ExtensionUserChangePayload>)
     })
+    socket.on(SocketEvents.USER_DISCONNECTED, (data: SocketUserChangePayload) => {
+    })
 }
 
 const retrieveRoomData = (sendResponse) => {
@@ -67,6 +71,7 @@ const retrieveRoomData = (sendResponse) => {
 
     //this could be an issue with multiple of these socket connections being opened
     socket.on(SocketEvents.RECIEVE_ROOM_DATA, (data: SocketRoomDataPayload) => {
+        data.room.users.find(user => user.userId === socket.id).current = true
         sendResponse({
             status: Messages.SUCCESS,
             payload: {room: data.room}

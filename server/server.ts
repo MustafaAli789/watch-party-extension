@@ -27,7 +27,7 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       }
 
       addRoom(joinRoomData.roomId, joinRoomData.roomName)
-      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId)
+      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, true)
 
       if (error) {
         console.log('shouldnt happen')
@@ -37,15 +37,16 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       socket.join(joinRoomData.roomId)
       socket.emit(SocketEvents.CREATED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
     } else if (joinRoomData.action == RoomAction.JOIN){
-      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId)
+      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false)
 
       if (error) {
         return callback(error)
       }
 
+      socket.join(joinRoomData.roomId)
       socket.emit(SocketEvents.JOINED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
       socket.to(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
-      socket.to(joinRoomData.roomId).emit(SocketEvents.USER_CONNECTED, { message: `User with name: ${joinRoomData.userName} has joined the room` } as SocketUserChangePayload)
+      socket.broadcast.to(joinRoomData.roomId).emit(SocketEvents.USER_CONNECTED, { message: `User with name: ${joinRoomData.userName} has joined the room` } as SocketUserChangePayload)
     } else {
       callback(`Invalid action. Must be ${RoomAction.CREATE} OR ${RoomAction.JOIN}`)
     }
@@ -56,30 +57,24 @@ io.on(SocketEvents.CONNECTION, (socket) => {
   })
 
   socket.on(SocketEvents.DISCONNECT, () => {
-    disconnectSocket(socket, io)
+    const { error, deletedUser } = removeUser(socket.id)
+  
+    console.log("Deleted user:")
+    console.log(deletedUser)
+  
+    if (error) {
+      console.log("shouldnt happen theoretiically")
+      return false
+    }
+  
+    socket.to(deletedUser.roomId).emit(SocketEvents.USER_DISCONNECTED, { message: `User with name: ${deletedUser.userName} has left the room` } as SocketUserChangePayload)
+    socket.to(deletedUser.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(deletedUser.roomId) } as SocketRoomDataPayload)
   });
 
   socket.on(SocketEvents.FORCE_DISCONNECT, () => {
     socket.disconnect()
   })
-
 });
-
-function disconnectSocket(socket: Socket, io) {
-  const { error, deletedUser } = removeUser(socket.id)
-
-  console.log("Deleted user:")
-  console.log(deletedUser)
-
-  if (error) {
-    console.log("shouldnt happen theoretiically")
-    return false
-  }
-
-  socket.to(deletedUser.roomId).emit(SocketEvents.USER_DISCONNECTED, { message: `User with name: ${deletedUser.userName} has left the room` } as SocketUserChangePayload)
-  socket.to(deletedUser.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(deletedUser.roomId) } as SocketRoomDataPayload)
-  return true
-}
 
 server.listen(3000, () => {
   console.log('listening on *:3000');

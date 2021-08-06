@@ -160,22 +160,32 @@ const updateMainUsers = (users: Array<User>) => {
     users.forEach(user => {
         let userElem = document.createElement("DIV");
         userElem.classList.add("userElem");
-        userElem.innerHTML = user.userName;
+        if (!!user.current) {
+            userElem.classList.add("currentUser")
+        }
+        userElem.innerHTML = (user.admin ? '<strong>ADMIN:</strong> ' : '')+user.userName;
         usersListContainer.append(userElem);
     });
 }
 
 // Message handler
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
-    if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
-        leaveRoom()
-    } else if (request.message === Messages.TOPOPUP_ROOM_DATA) {
-        let reqData = <ExtensionRoomPayload>request.payload
-        updateMainUsers(reqData.room.users)
-    } else if (request.message === Messages.TOPOPUP_USER_CONNECTED) {
-        let reqData = <ExtensionUserChangePayload>request.payload
-        //do something with the data now
-    }
+    
+    //Check below is important b/c if we have multiple popups open in diff windows, we dont want all reacting to same event
+    chrome.tabs.query({active: true, currentWindow:true}, tabs => {
+        let curActiveTabId = tabs[0].id
+        if (sender.tab.id === curActiveTabId) {
+            if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
+                leaveRoom()
+            } else if (request.message === Messages.TOPOPUP_ROOM_DATA) {
+                let reqData = <ExtensionRoomPayload>request.payload
+                updateMainUsers(reqData.room.users)
+            } else if (request.message === Messages.TOPOPUP_USER_CONNECTED) {
+                let reqData = <ExtensionUserChangePayload>request.payload
+                //do something with the data now
+            }
+        }
+    })
     return true
 });
 

@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRoomFromUserId = exports.getRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.RoomImpl = exports.UserImpl = void 0;
 class UserImpl {
-    constructor(userId, userName, roomId) {
+    constructor(userId, userName, roomId, admin) {
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;
+        this.admin = admin;
     }
 }
 exports.UserImpl = UserImpl;
@@ -37,13 +38,13 @@ const addRoom = (roomId, roomName) => {
     rooms.push(new RoomImpl(roomId, roomName));
 };
 exports.addRoom = addRoom;
-const addUserToRoom = (userId, userName, roomId) => {
+const addUserToRoom = (userId, userName, roomId, admin) => {
     let uName = userName.trim().toLowerCase();
     const existingRoom = rooms.find(room => room.roomId == roomId);
     if (!existingRoom) {
         return { error: `Room with id ${roomId} does not exist.`, user: null };
     }
-    const user = new UserImpl(userId, uName, roomId);
+    const user = new UserImpl(userId, uName, roomId, admin);
     existingRoom.addUser(user);
     return { user, error: null };
 };

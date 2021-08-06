@@ -5,10 +5,13 @@ export class UserImpl implements User {
     userId: string;
     userName: string;
     roomId: string;
-    constructor(userId: string, userName: string, roomId: string) {
+    admin: Boolean;
+    current?: Boolean;
+    constructor(userId: string, userName: string, roomId: string, admin: Boolean) {
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;
+        this.admin = admin;
     }
     
 }   
@@ -44,7 +47,7 @@ export const addRoom = (roomId: string, roomName: string): void => {
     rooms.push(new RoomImpl(roomId, roomName))
 }
 
-export const addUserToRoom = (userId: string, userName: string, roomId: string): {error: string, user: User} => {
+export const addUserToRoom = (userId: string, userName: string, roomId: string, admin: Boolean): {error: string, user: User} => {
     let uName: string = userName.trim().toLowerCase();
 
     const existingRoom: Room = rooms.find(room => room.roomId == roomId)
@@ -53,7 +56,7 @@ export const addUserToRoom = (userId: string, userName: string, roomId: string):
         return {error:  `Room with id ${roomId} does not exist.`, user: null}
     }
 
-    const user: User = new UserImpl(userId, uName, roomId)
+    const user: User = new UserImpl(userId, uName, roomId, admin)
     existingRoom.addUser(user)
 
     return { user, error: null }

@@ -1,6 +1,13 @@
 import { Messages } from './models/constants'
 import { MessageObject, ResponseObject } from './models/messagepassing'
 
+// Updates needed
+/**
+ * - Actual notifs when user joins or leaves
+ * - Color ur user darker
+ * - Actual synch functionality
+ * - future feature: chat box
+ */
 
 chrome.runtime.onInstalled.addListener(() => {
     // default state goes here
@@ -55,23 +62,3 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
 });
 
-// const standardMessageToForeground = (tabId: number, message: Messages, payload, callback: Function) => {
-//     chrome.tabs.sendMessage(tabId, {
-//         message: message,
-//         payload: payload
-//     }, resp => callback(resp))
-// }
-
-// //Send success or failure and pass on payload
-// const standardCallback = (sendResponse) => (resp) => {
-//     if (resp.status === Messages.SUCCESS) {
-//         sendResponse({
-//             status: Messages.SUCCESS,
-//             payload: resp.payload
-//         })
-//     } else {
-//         sendResponse({
-//             status: Messages.FAILURE
-//         })
-//     }
-// }

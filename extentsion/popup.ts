@@ -163,7 +163,9 @@ const updateMainUsers = (users: Array<User>) => {
         if (!!user.current) {
             userElem.classList.add("currentUser")
         }
-        userElem.innerHTML = (user.admin ? '<strong>ADMIN:</strong> ' : '')+user.userName;
+        let userIcon = (user.admin ? "<img class='userIcon' src='../images/adminUser.png' alt='adminuser'>" : "<img class='userIcon' src='../images/user.png' alt='normaluser'>")
+        let userName = (!!user.current ? `<strong>${user.userName}</strong>` : `${user.userName}`)
+        userElem.innerHTML = userIcon+`<span style="margin-left:5px">${userName}</span>`;
         usersListContainer.append(userElem);
     });
 }

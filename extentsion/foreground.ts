@@ -2,13 +2,15 @@ import { Messages } from './models/constants'
 import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionUserChangePayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
-import { SocketEvents, RoomAction } from '../sharedmodels/constants'
-import {  SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload } from '../sharedmodels/payloads'
+import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
+import {  SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload } from '../sharedmodels/payloads'
+import { VideoData } from '../sharedmodels/videoData';
 
 import { Socket, io } from 'socket.io-client'; 
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
+var socketVideoEventHappened = false
 
 //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
 const guid = (): string => {
@@ -35,6 +37,35 @@ const establishSocketConnectionForExistingRoom = (joinRoomData: ExtensionJoinRoo
 
 const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, joinChannelEvent: string) => {
 
+    vidElem.onplay = function() {
+        if (socketVideoEventHappened) return
+        socket.emit(SocketEvents.VIDEO_EVENT, { 
+            videoEvent: VideoEvent.PLAY, 
+            videoData: retrieveVideoData(), 
+            triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+    }
+    vidElem.onpause = function() {
+        if (socketVideoEventHappened) return
+        socket.emit(SocketEvents.VIDEO_EVENT, { 
+            videoEvent: VideoEvent.PAUSE, 
+            videoData: retrieveVideoData(), 
+            triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+    }
+    vidElem.onseeked = function() {
+        if (socketVideoEventHappened) return
+        socket.emit(SocketEvents.VIDEO_EVENT, { 
+            videoEvent: VideoEvent.SEEK, 
+            videoData: retrieveVideoData(), 
+            triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+    }
+    vidElem.onratechange = function() {
+        if (socketVideoEventHappened) return
+        socket.emit(SocketEvents.VIDEO_EVENT, { 
+            videoEvent: VideoEvent.SPEED, 
+            videoData: retrieveVideoData(), 
+            triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+    }
+
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
@@ -56,14 +87,57 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, j
             payload: {room: data.room}
         } as MessageObject<ExtensionRoomPayload>)
     })
-    socket.on(SocketEvents.USER_CONNECTED, (data: SocketUserChangePayload) => {
-        chrome.runtime.sendMessage({
-            message: Messages.TOPOPUP_USER_CONNECTED,
-            payload: {message: data.message}
-        } as MessageObject<ExtensionUserChangePayload>)
+
+    socket.on(SocketEvents.USER_CHANGE, (data: SocketUserChangePayload) => {
+
+        //cur socket is admin user of room and someone just joined, need to send them initial join data
+        if (data.changeEvent === UserChange.JOIN && data.admin.userId === socket.id) {
+            socket.emit(SocketEvents.VIDEO_EVENT, { 
+                videoEvent: VideoEvent.JOIN, 
+                videoData: retrieveVideoData(), 
+                userIdToSendTo: data.changedUser.userId,
+                triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+        }
+
+        //NOTIFICATION HERE
     })
-    socket.on(SocketEvents.USER_DISCONNECTED, (data: SocketUserChangePayload) => {
+
+    socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketGetVideoEventPayload) => {
+        let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
+        socketVideoEventHappened = true
+        switch(videoEventData.videoEvent) {
+            case(VideoEvent.JOIN):
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec+1 // the +1 is to account for time it takes for vid to load
+                videoEventData.videoData.playing ? vidElem.play() : vidElem.pause()
+                vidElem.playbackRate = videoEventData.videoData.speed
+                break;
+            case(VideoEvent.PLAY):
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec // the +1 is to account for time it takes for vid to load
+                vidElem.play()
+                break;
+            case(VideoEvent.PAUSE):
+                vidElem.currentTime = videoEventData.videoData.playbackTime - elapsedTimeSinceRequestSec
+                vidElem.pause()
+                break;
+            case(VideoEvent.SPEED):
+                vidElem.playbackRate = videoEventData.videoData.speed
+                break;
+            case(VideoEvent.SEEK):
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec // the +1 is to account for time it takes for vid to load
+                break
+        }
+        setTimeout(() => socketVideoEventHappened = false, 200)
     })
+}
+
+//https://stackoverflow.com/questions/6877403/how-to-tell-if-a-video-element-is-currently-playing
+const retrieveVideoData = (): VideoData => {
+    return {
+        timestamp: Date.now(),
+        playing: !!(vidElem.currentTime > 0 && !vidElem.paused && !vidElem.ended && vidElem.readyState > 2),
+        speed: vidElem.playbackRate,
+        playbackTime: vidElem.currentTime
+    }
 }
 
 const retrieveRoomData = (sendResponse) => {
@@ -82,7 +156,7 @@ const retrieveRoomData = (sendResponse) => {
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
     if (request.message === Messages.TOFG_VIDEO_ON_SCREEN) {
         vidElem = document.querySelector('video')
-        if (vidElem != null && vidElem != undefined) {
+        if (vidElem?.offsetParent != null && vidElem?.offsetParent != undefined) {
             sendResponse({
                 status: Messages.SUCCESS,
                 payload: true

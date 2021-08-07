@@ -1,8 +1,8 @@
 import { Server, Socket } from 'socket.io';
-import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId } from './util'
-import { SocketEvents, RoomAction } from '../sharedmodels/constants'
+import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId, getAdminUserFromRoom, getUserFromId } from './util'
+import { SocketEvents, RoomAction, UserChange } from '../sharedmodels/constants'
 
-import { SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload } from '../sharedmodels/payloads'
+import { SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload } from '../sharedmodels/payloads'
 
 const express = require('express');
 const app = express();
@@ -37,7 +37,7 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       socket.join(joinRoomData.roomId)
       socket.emit(SocketEvents.CREATED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
     } else if (joinRoomData.action == RoomAction.JOIN){
-      const { error } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false)
+      const { error, user } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false)
 
       if (error) {
         return callback(error)
@@ -46,7 +46,8 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       socket.join(joinRoomData.roomId)
       socket.emit(SocketEvents.JOINED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
       socket.to(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
-      socket.broadcast.to(joinRoomData.roomId).emit(SocketEvents.USER_CONNECTED, { message: `User with name: ${joinRoomData.userName} has joined the room` } as SocketUserChangePayload)
+      socket.broadcast.to(joinRoomData.roomId).emit(SocketEvents.USER_CHANGE, { 
+        changeEvent: UserChange.JOIN, changedUser: user, admin: getAdminUserFromRoom(joinRoomData.roomId) } as SocketUserChangePayload)
     } else {
       callback(`Invalid action. Must be ${RoomAction.CREATE} OR ${RoomAction.JOIN}`)
     }
@@ -54,6 +55,18 @@ io.on(SocketEvents.CONNECTION, (socket) => {
 
   socket.on(SocketEvents.GET_ROOM_DATA, () => {
     socket.emit(SocketEvents.RECIEVE_ROOM_DATA, { room: getRoomFromUserId(socket.id) } as SocketRoomDataPayload)
+  })
+
+  socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketCreateVideoEventPayload) => {
+  
+    //send to specific socket only
+    if (!!videoEventData.userIdToSendTo) {
+      socket.to(videoEventData.userIdToSendTo).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
+        videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId) } as SocketGetVideoEventPayload)
+    } else {
+      socket.broadcast.to(getUserFromId(socket.id).roomId).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
+        videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId) } as SocketGetVideoEventPayload)
+    }
   })
 
   socket.on(SocketEvents.DISCONNECT, () => {
@@ -67,7 +80,8 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       return false
     }
   
-    socket.to(deletedUser.roomId).emit(SocketEvents.USER_DISCONNECTED, { message: `User with name: ${deletedUser.userName} has left the room` } as SocketUserChangePayload)
+    socket.broadcast.to(deletedUser.roomId).emit(SocketEvents.USER_CHANGE, { 
+      changeEvent: UserChange.DISCONNECT, changedUser: deletedUser, admin: getAdminUserFromRoom(deletedUser.roomId) } as SocketUserChangePayload)
     socket.to(deletedUser.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(deletedUser.roomId) } as SocketRoomDataPayload)
   });
 

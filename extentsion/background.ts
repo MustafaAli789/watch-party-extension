@@ -60,5 +60,10 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 // Message handler
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
+    // if (request.message === Messages.TOBG_USER_CONNECTED) {
+    //     chrome.notifications.create(sender.id, {type:'basic', title: 'User Joined', message: request.payload.message, iconUrl:"../images/icon-16x16.png"})
+    // } else if (request.message === Messages.TOBG_USER_DISCONNECTED) {
+    //     chrome.notifications.create(sender.id, {type:'basic', title: 'User Left', message: request.payload.message, iconUrl:"../images/icon-16x16.png"})
+    // }
 });
 

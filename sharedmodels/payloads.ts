@@ -1,5 +1,7 @@
-import { RoomAction } from './constants';
+import { RoomAction, UserChange, VideoEvent } from './constants';
 import { Room } from './room'
+import { User } from './user';
+import { VideoData } from './videoData'
 
 export interface SocketJoinRoomPayload {
     roomName?: string,
@@ -13,5 +15,20 @@ export interface SocketRoomDataPayload {
 }
 
 export interface SocketUserChangePayload {
-    message: string
+    changeEvent: UserChange,
+    admin: User,
+    changedUser: User
+}
+
+export interface SocketCreateVideoEventPayload {
+    videoEvent: VideoEvent,
+    videoData: VideoData,
+    triggeringUserId: string,
+    userIdToSendTo?: string //if specified, will send event to a specific user only
+}
+
+export interface SocketGetVideoEventPayload {
+    videoEvent: VideoEvent,
+    videoData: VideoData,
+    triggeringUser: User,
 }

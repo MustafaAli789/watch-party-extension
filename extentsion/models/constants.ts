@@ -14,8 +14,9 @@ export enum Messages{
     TOFG_DO_YOU_EXIST,
     TOPOPUP_LEAVE_ROOM,
     TOPOPUP_ROOM_DATA,
-    TOPOPUP_USER_CONNECTED,
-    TOFG_IS_CHANNEL_OPEN
+    TOBG_USER_CONNECTED,
+    TOFG_IS_CHANNEL_OPEN,
+    TOBG_USER_DISCONNECTED
 }
 
 export const TabsStorage = "active_tabs_watchparty"

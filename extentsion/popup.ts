@@ -182,9 +182,6 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
             } else if (request.message === Messages.TOPOPUP_ROOM_DATA) {
                 let reqData = <ExtensionRoomPayload>request.payload
                 updateMainUsers(reqData.room.users)
-            } else if (request.message === Messages.TOPOPUP_USER_CONNECTED) {
-                let reqData = <ExtensionUserChangePayload>request.payload
-                //do something with the data now
             }
         }
     })

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRoomFromUserId = exports.getRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.RoomImpl = exports.UserImpl = void 0;
+exports.getAdminUserFromRoom = exports.getUserFromId = exports.getRoomFromUserId = exports.getRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.RoomImpl = exports.UserImpl = void 0;
 class UserImpl {
     constructor(userId, userName, roomId, admin) {
         this.userId = userId;
@@ -76,4 +76,20 @@ const getRoomFromUserId = (userId) => {
     return rooms.find(room => room.users.find(user => user.userId === userId));
 };
 exports.getRoomFromUserId = getRoomFromUserId;
+const getUserFromId = (userId) => {
+    for (let i = rooms.length - 1; i >= 0; i--) {
+        let user = rooms[i].users.find(user => user.userId === userId);
+        if (!!user) {
+            return user;
+        }
+    }
+    return null;
+};
+exports.getUserFromId = getUserFromId;
+const getAdminUserFromRoom = (roomId) => {
+    var _a;
+    let user = (_a = rooms.find(room => room.roomId === roomId)) === null || _a === void 0 ? void 0 : _a.users.find(user => user.admin);
+    return user;
+};
+exports.getAdminUserFromRoom = getAdminUserFromRoom;
 //# sourceMappingURL=util.js.map

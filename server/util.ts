@@ -91,3 +91,18 @@ export const getRoomFromUserId = (userId: string): Room => {
     return rooms.find(room => room.users.find(user => user.userId === userId))
 }
 
+export const getUserFromId = (userId: string): User => {
+    for (let i =rooms.length-1; i>=0; i--) {
+        let user = rooms[i].users.find(user => user.userId === userId)
+        if (!!user){
+            return user
+        }
+    }
+    return null
+}
+
+export const getAdminUserFromRoom = (roomId: string): User => {
+    let user = rooms.find(room => room.roomId === roomId)?.users.find(user => user.admin)
+    return user
+}
+

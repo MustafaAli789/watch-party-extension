@@ -69,8 +69,11 @@ export const removeUser = (userId: string): { deletedUser: User, error: String }
         if(deletedUser != null && deletedUser != undefined) {
 
             //special check to see if room empty i.e last person in room left
+            //else reassign admin status
             if (rooms[i].users.length == 0) {
                 rooms.splice(i, 1)
+            } else if(deletedUser.admin) { 
+                rooms[i].users[Math.floor(Math.random() * rooms[i].users.length)].admin = true
             }
 
             return { deletedUser, error: null }

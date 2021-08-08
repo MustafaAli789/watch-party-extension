@@ -64,10 +64,10 @@ io.on(SocketEvents.CONNECTION, (socket) => {
     //send to specific socket only
     if (!!videoEventData.userIdToSendTo) {
       socket.to(videoEventData.userIdToSendTo).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
-        videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId) } as SocketGetVideoEventPayload)
+        videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error } as SocketGetVideoEventPayload)
     } else {
       socket.broadcast.to(getUserFromId(socket.id).roomId).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
-        videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId) } as SocketGetVideoEventPayload)
+        videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error } as SocketGetVideoEventPayload)
     }
   })
 

@@ -87,7 +87,7 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
     socket.emit(SocketEvents.JOIN, roomData, (err) => {
-        // preferabbly a notif
+        socket.emit(SocketEvents.FORCE_DISCONNECT)
         alert(err)
     })
     socket.on(SocketEvents.CONNECTED_TO_ROOM, (data: SocketRoomDataPayload) => {
@@ -110,11 +110,15 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
 
         //cur socket is admin user of room and someone just joined, need to send them initial join data
         if (data.changeEvent === UserChange.JOIN && data.admin.userId === socket.id) {
+            if (vidElem.readyState <= 2) {
+
+            }
             socket.emit(SocketEvents.VIDEO_EVENT, { 
                 videoEvent: VideoEvent.JOIN, 
                 videoData: retrieveVideoData(), 
                 userIdToSendTo: data.changedUser.userId,
-                triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+                triggeringUserId: socket.id,
+                error: vidElem.readyState <= 2 ? 'Admins video is buffering. Please rejoin.' : null } as SocketCreateVideoEventPayload)
         }
 
         //NOTIFICATION HERE
@@ -124,6 +128,11 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
         let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
         switch(videoEventData.videoEvent) {
             case(VideoEvent.JOIN):
+                if(!!videoEventData.error) { // i.e admin is currently buffering
+                    socket.emit(SocketEvents.FORCE_DISCONNECT)
+                    alert(videoEventData.error)
+                    return
+                }
                 socketVideoEventHappened.seek = true
                 socketVideoEventHappened.speed = true
                 vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec+0.5 // the +0.5 is to account for time it takes for vid to load
@@ -137,15 +146,11 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
                 vidElem.playbackRate = videoEventData.videoData.speed
                 break;
             case(VideoEvent.PLAY):
-                socketVideoEventHappened.seek = true
                 socketVideoEventHappened.play = true
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec 
                 vidElem.play()
                 break;
             case(VideoEvent.PAUSE):
-                socketVideoEventHappened.seek = true
                 socketVideoEventHappened.pause = true
-                vidElem.currentTime = videoEventData.videoData.playbackTime
                 vidElem.pause()
                 break;
             case(VideoEvent.SPEED):

@@ -24,11 +24,13 @@ export interface SocketCreateVideoEventPayload {
     videoEvent: VideoEvent,
     videoData: VideoData,
     triggeringUserId: string,
-    userIdToSendTo?: string //if specified, will send event to a specific user only
+    userIdToSendTo?: string, //if specified, will send event to a specific user only,
+    error?: string
 }
 
 export interface SocketGetVideoEventPayload {
     videoEvent: VideoEvent,
     videoData: VideoData,
     triggeringUser: User,
+    error?: string
 }

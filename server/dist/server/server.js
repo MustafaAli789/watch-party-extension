@@ -50,11 +50,11 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
         //send to specific socket only
         if (!!videoEventData.userIdToSendTo) {
             socket.to(videoEventData.userIdToSendTo).emit(constants_1.SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
-                videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId) });
+                videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error });
         }
         else {
             socket.broadcast.to(util_1.getUserFromId(socket.id).roomId).emit(constants_1.SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
-                videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId) });
+                videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error });
         }
     });
     socket.on(constants_1.SocketEvents.DISCONNECT, () => {

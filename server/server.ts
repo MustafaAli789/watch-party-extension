@@ -11,13 +11,11 @@ const server = http.createServer(app);
 const io: Server = require("socket.io")(server);
 
 io.on(SocketEvents.CONNECTION, (socket) => {
-
-  console.log('A user connected');
   
   socket.on(SocketEvents.JOIN, (joinRoomData: SocketJoinRoomPayload, callback) => {
 
     if (!joinRoomData.roomId) {
-      return callback('Missing roomid')
+      return callback('Missing roomid.')
     }
 
     if (joinRoomData.action == RoomAction.CREATE) {
@@ -34,8 +32,10 @@ io.on(SocketEvents.CONNECTION, (socket) => {
         return callback(error)
       }
 
+      console.log(`User ${joinRoomData.userName} created room ${joinRoomData.roomName}`);
+
       socket.join(joinRoomData.roomId)
-      socket.emit(SocketEvents.CREATED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+      socket.emit(SocketEvents.CONNECTED_TO_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
     } else if (joinRoomData.action == RoomAction.JOIN){
       const { error, user } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false)
 
@@ -43,8 +43,10 @@ io.on(SocketEvents.CONNECTION, (socket) => {
         return callback(error)
       }
 
+      console.log(`User ${joinRoomData.userName} joined room ${getRoom(joinRoomData.roomId).roomName}`);
+
       socket.join(joinRoomData.roomId)
-      socket.emit(SocketEvents.JOINED_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+      socket.emit(SocketEvents.CONNECTED_TO_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
       socket.to(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
       socket.broadcast.to(joinRoomData.roomId).emit(SocketEvents.USER_CHANGE, { 
         changeEvent: UserChange.JOIN, changedUser: user, admin: getAdminUserFromRoom(joinRoomData.roomId) } as SocketUserChangePayload)

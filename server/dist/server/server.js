@@ -8,10 +8,9 @@ const http = require('http');
 const server = http.createServer(app);
 const io = require("socket.io")(server);
 io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
-    console.log('A user connected');
     socket.on(constants_1.SocketEvents.JOIN, (joinRoomData, callback) => {
         if (!joinRoomData.roomId) {
-            return callback('Missing roomid');
+            return callback('Missing roomid.');
         }
         if (joinRoomData.action == constants_1.RoomAction.CREATE) {
             if (!joinRoomData.roomName) {
@@ -23,16 +22,18 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
                 console.log('shouldnt happen');
                 return callback(error);
             }
+            console.log(`User ${joinRoomData.userName} created room ${joinRoomData.roomName}`);
             socket.join(joinRoomData.roomId);
-            socket.emit(constants_1.SocketEvents.CREATED_ROOM, { room: util_1.getRoom(joinRoomData.roomId) });
+            socket.emit(constants_1.SocketEvents.CONNECTED_TO_ROOM, { room: util_1.getRoom(joinRoomData.roomId) });
         }
         else if (joinRoomData.action == constants_1.RoomAction.JOIN) {
             const { error, user } = util_1.addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false);
             if (error) {
                 return callback(error);
             }
+            console.log(`User ${joinRoomData.userName} joined room ${util_1.getRoom(joinRoomData.roomId).roomName}`);
             socket.join(joinRoomData.roomId);
-            socket.emit(constants_1.SocketEvents.JOINED_ROOM, { room: util_1.getRoom(joinRoomData.roomId) });
+            socket.emit(constants_1.SocketEvents.CONNECTED_TO_ROOM, { room: util_1.getRoom(joinRoomData.roomId) });
             socket.to(joinRoomData.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
             socket.broadcast.to(joinRoomData.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
                 changeEvent: constants_1.UserChange.JOIN, changedUser: user, admin: util_1.getAdminUserFromRoom(joinRoomData.roomId)

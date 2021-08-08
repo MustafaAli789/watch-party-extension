@@ -3,9 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserChange = exports.VideoEvent = exports.RoomAction = exports.SocketEvents = void 0;
 exports.SocketEvents = {
     JOIN: 'join',
-    CREATED_ROOM: 'created_room',
+    CONNECTED_TO_ROOM: 'connected_to_room',
     ROOM_DATA: 'room_data',
-    JOINED_ROOM: 'joined_room',
     DISCONNECT: 'disconnect',
     USER_CHANGE: 'user_change',
     CONNECTION: 'connection',

@@ -44,6 +44,9 @@ const addUserToRoom = (userId, userName, roomId, admin) => {
     if (!existingRoom) {
         return { error: `Room with id ${roomId} does not exist.`, user: null };
     }
+    if (existingRoom.users.find(user => user.userName.trim() === userName.trim())) {
+        return { error: `User with username ${userName.trim()} already exists in room.`, user: null };
+    }
     const user = new UserImpl(userId, uName, roomId, admin);
     existingRoom.addUser(user);
     return { user, error: null };

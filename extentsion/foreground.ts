@@ -10,7 +10,12 @@ import { Socket, io } from 'socket.io-client';
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
-var socketVideoEventHappened = false
+var socketVideoEventHappened = {
+    play: false,
+    pause: false,
+    seek: false,
+    speed: false
+}
 
 //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
 const guid = (): string => {
@@ -27,39 +32,51 @@ const establishSocketConnectionForNewRoom = (newRoomData: ExtensionNewRoomPayloa
     //theoretically should be unique
     let roomId: string = guid()
     let roomData: SocketJoinRoomPayload = {roomName: newRoomData.roomName, userName: newRoomData.userName, roomId: roomId, action: RoomAction.CREATE}
-    createSocketConnection(roomData, sendResponse, SocketEvents.CREATED_ROOM)
+    createSocketConnection(roomData, sendResponse)
 }
 
 const establishSocketConnectionForExistingRoom = (joinRoomData: ExtensionJoinRoomPayload, sendResponse) => {
     let roomData: SocketJoinRoomPayload = {roomName: null, userName: joinRoomData.userName, roomId: joinRoomData.roomId, action: RoomAction.JOIN}
-    createSocketConnection(roomData, sendResponse, SocketEvents.JOINED_ROOM)
+    createSocketConnection(roomData, sendResponse)
 }
 
-const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, joinChannelEvent: string) => {
+const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) => {
 
     vidElem.onplay = function() {
-        if (socketVideoEventHappened) return
+        if (socketVideoEventHappened.play) {
+            socketVideoEventHappened.play = false
+            return
+        }
         socket.emit(SocketEvents.VIDEO_EVENT, { 
             videoEvent: VideoEvent.PLAY, 
             videoData: retrieveVideoData(), 
             triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
     }
     vidElem.onpause = function() {
-        if (socketVideoEventHappened) return
+        if (socketVideoEventHappened.pause) {
+            socketVideoEventHappened.pause = false
+            return
+        }
         socket.emit(SocketEvents.VIDEO_EVENT, { 
             videoEvent: VideoEvent.PAUSE, 
             videoData: retrieveVideoData(), 
             triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
     }
     vidElem.onseeked = function() {
-        if (socketVideoEventHappened) return
+        if (socketVideoEventHappened.seek) {
+            socketVideoEventHappened.seek = false
+            return
+        }
         socket.emit(SocketEvents.VIDEO_EVENT, { 
             videoEvent: VideoEvent.SEEK, 
             videoData: retrieveVideoData(), 
             triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
     }
     vidElem.onratechange = function() {
-        if (socketVideoEventHappened) return
+        if (socketVideoEventHappened.speed) {
+            socketVideoEventHappened.speed = false
+            return
+        }
         socket.emit(SocketEvents.VIDEO_EVENT, { 
             videoEvent: VideoEvent.SPEED, 
             videoData: retrieveVideoData(), 
@@ -70,9 +87,10 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, j
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
     socket.emit(SocketEvents.JOIN, roomData, (err) => {
+        // preferabbly a notif
         alert(err)
     })
-    socket.on(joinChannelEvent, (data: SocketRoomDataPayload) => {
+    socket.on(SocketEvents.CONNECTED_TO_ROOM, (data: SocketRoomDataPayload) => {
         data.room.users.find(user => user.userId === socket.id).current = true
         sendResponse({
             status: Messages.SUCCESS,
@@ -104,29 +122,41 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse, j
 
     socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketGetVideoEventPayload) => {
         let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
-        socketVideoEventHappened = true
         switch(videoEventData.videoEvent) {
             case(VideoEvent.JOIN):
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec+1 // the +1 is to account for time it takes for vid to load
-                videoEventData.videoData.playing ? vidElem.play() : vidElem.pause()
+                socketVideoEventHappened.seek = true
+                socketVideoEventHappened.speed = true
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec+0.5 // the +0.5 is to account for time it takes for vid to load
+                if (videoEventData.videoData.playing) {
+                    socketVideoEventHappened.play = true
+                    vidElem.play()
+                } else {
+                    socketVideoEventHappened.pause = true
+                    vidElem.pause()
+                }
                 vidElem.playbackRate = videoEventData.videoData.speed
                 break;
             case(VideoEvent.PLAY):
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec // the +1 is to account for time it takes for vid to load
+                socketVideoEventHappened.seek = true
+                socketVideoEventHappened.play = true
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec 
                 vidElem.play()
                 break;
             case(VideoEvent.PAUSE):
-                vidElem.currentTime = videoEventData.videoData.playbackTime - elapsedTimeSinceRequestSec
+                socketVideoEventHappened.seek = true
+                socketVideoEventHappened.pause = true
+                vidElem.currentTime = videoEventData.videoData.playbackTime
                 vidElem.pause()
                 break;
             case(VideoEvent.SPEED):
+                socketVideoEventHappened.speed = true
                 vidElem.playbackRate = videoEventData.videoData.speed
                 break;
             case(VideoEvent.SEEK):
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec // the +1 is to account for time it takes for vid to load
+                socketVideoEventHappened.seek = true
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec 
                 break
         }
-        setTimeout(() => socketVideoEventHappened = false, 200)
     })
 }
 

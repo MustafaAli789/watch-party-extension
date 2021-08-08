@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId, getAdminUserFromRoom, getUserFromId } from './util'
 import { SocketEvents, RoomAction, UserChange } from '../sharedmodels/constants'
 
-import { SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload } from '../sharedmodels/payloads'
+import { SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload, SocketSyncVideoPayload } from '../sharedmodels/payloads'
 
 const express = require('express');
 const app = express();
@@ -35,7 +35,7 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       console.log(`User ${joinRoomData.userName} created room ${joinRoomData.roomName}`);
 
       socket.join(joinRoomData.roomId)
-      socket.emit(SocketEvents.CONNECTED_TO_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+      io.in(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
     } else if (joinRoomData.action == RoomAction.JOIN){
       const { error, user } = addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false)
 
@@ -46,10 +46,10 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       console.log(`User ${joinRoomData.userName} joined room ${getRoom(joinRoomData.roomId).roomName}`);
 
       socket.join(joinRoomData.roomId)
-      socket.emit(SocketEvents.CONNECTED_TO_ROOM, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
-      socket.to(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
-      socket.broadcast.to(joinRoomData.roomId).emit(SocketEvents.USER_CHANGE, { 
-        changeEvent: UserChange.JOIN, changedUser: user, admin: getAdminUserFromRoom(joinRoomData.roomId) } as SocketUserChangePayload)
+      io.in(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
+      socket.to(joinRoomData.roomId).emit(SocketEvents.USER_CHANGE, { 
+        changeEvent: UserChange.JOIN, changedUser: user } as SocketUserChangePayload)
+      socket.to(getAdminUserFromRoom(joinRoomData.roomId).userId).emit(SocketEvents.SYNC_VIDEO_TO_ADMIN, { userId: socket.id, userJoining: true } as SocketSyncVideoPayload)
     } else {
       callback(`Invalid action. Must be ${RoomAction.CREATE} OR ${RoomAction.JOIN}`)
     }
@@ -66,7 +66,7 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       socket.to(videoEventData.userIdToSendTo).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
         videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error } as SocketGetVideoEventPayload)
     } else {
-      socket.broadcast.to(getUserFromId(socket.id).roomId).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
+      socket.to(getUserFromId(socket.id).roomId).emit(SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
         videoData: videoEventData.videoData, triggeringUser: getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error } as SocketGetVideoEventPayload)
     }
   })
@@ -82,9 +82,9 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       return false
     }
   
-    socket.broadcast.to(deletedUser.roomId).emit(SocketEvents.USER_CHANGE, { 
-      changeEvent: UserChange.DISCONNECT, changedUser: deletedUser, admin: getAdminUserFromRoom(deletedUser.roomId) } as SocketUserChangePayload)
-    socket.to(deletedUser.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(deletedUser.roomId) } as SocketRoomDataPayload)
+    socket.to(deletedUser.roomId).emit(SocketEvents.USER_CHANGE, { 
+      changeEvent: UserChange.DISCONNECT, changedUser: deletedUser } as SocketUserChangePayload)
+    io.to(deletedUser.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(deletedUser.roomId) } as SocketRoomDataPayload)
   });
 
   socket.on(SocketEvents.FORCE_DISCONNECT, () => {

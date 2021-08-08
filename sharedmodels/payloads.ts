@@ -16,7 +16,6 @@ export interface SocketRoomDataPayload {
 
 export interface SocketUserChangePayload {
     changeEvent: UserChange,
-    admin: User,
     changedUser: User
 }
 
@@ -33,4 +32,9 @@ export interface SocketGetVideoEventPayload {
     videoData: VideoData,
     triggeringUser: User,
     error?: string
+}
+
+export interface SocketSyncVideoPayload {
+    userId: string,
+    userJoining: Boolean
 }

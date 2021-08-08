@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserChange = exports.VideoEvent = exports.RoomAction = exports.SocketEvents = void 0;
 exports.SocketEvents = {
     JOIN: 'join',
-    CONNECTED_TO_ROOM: 'connected_to_room',
     ROOM_DATA: 'room_data',
     DISCONNECT: 'disconnect',
     USER_CHANGE: 'user_change',
@@ -11,7 +10,8 @@ exports.SocketEvents = {
     FORCE_DISCONNECT: 'force_disconnect',
     GET_ROOM_DATA: 'get_room_data',
     RECIEVE_ROOM_DATA: 'recieve_room_data',
-    VIDEO_EVENT: 'video_event'
+    VIDEO_EVENT: 'video_event',
+    SYNC_VIDEO_TO_ADMIN: 'sync_video_to_admin'
 };
 var RoomAction;
 (function (RoomAction) {
@@ -21,10 +21,11 @@ var RoomAction;
 var VideoEvent;
 (function (VideoEvent) {
     VideoEvent[VideoEvent["JOIN"] = 0] = "JOIN";
-    VideoEvent[VideoEvent["PLAY"] = 1] = "PLAY";
-    VideoEvent[VideoEvent["PAUSE"] = 2] = "PAUSE";
-    VideoEvent[VideoEvent["SEEK"] = 3] = "SEEK";
-    VideoEvent[VideoEvent["SPEED"] = 4] = "SPEED";
+    VideoEvent[VideoEvent["SYNC"] = 1] = "SYNC";
+    VideoEvent[VideoEvent["PLAY"] = 2] = "PLAY";
+    VideoEvent[VideoEvent["PAUSE"] = 3] = "PAUSE";
+    VideoEvent[VideoEvent["SEEK"] = 4] = "SEEK";
+    VideoEvent[VideoEvent["SPEED"] = 5] = "SPEED";
 })(VideoEvent = exports.VideoEvent || (exports.VideoEvent = {}));
 var UserChange;
 (function (UserChange) {

@@ -1,6 +1,5 @@
 export const SocketEvents = {
     JOIN: 'join',
-    CONNECTED_TO_ROOM: 'connected_to_room',
     ROOM_DATA: 'room_data',
     DISCONNECT: 'disconnect',
     USER_CHANGE: 'user_change',
@@ -8,7 +7,8 @@ export const SocketEvents = {
     FORCE_DISCONNECT: 'force_disconnect',
     GET_ROOM_DATA: 'get_room_data',
     RECIEVE_ROOM_DATA: 'recieve_room_data',
-    VIDEO_EVENT: 'video_event'
+    VIDEO_EVENT: 'video_event',
+    SYNC_VIDEO_TO_ADMIN: 'sync_video_to_admin'
 }
 
 
@@ -19,6 +19,7 @@ export enum RoomAction {
 
 export enum VideoEvent {
     JOIN,
+    SYNC,
     PLAY,
     PAUSE,
     SEEK,

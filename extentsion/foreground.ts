@@ -3,7 +3,7 @@ import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
-import {  SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload } from '../sharedmodels/payloads'
+import {  SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload, SocketSyncVideoPayload } from '../sharedmodels/payloads'
 import { VideoData } from '../sharedmodels/videoData';
 
 import { Socket, io } from 'socket.io-client'; 
@@ -16,6 +16,7 @@ var socketVideoEventHappened = {
     seek: false,
     speed: false
 }
+var userJoined = false
 
 //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
 const guid = (): string => {
@@ -90,46 +91,47 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
         socket.emit(SocketEvents.FORCE_DISCONNECT)
         alert(err)
     })
-    socket.on(SocketEvents.CONNECTED_TO_ROOM, (data: SocketRoomDataPayload) => {
-        data.room.users.find(user => user.userId === socket.id).current = true
-        sendResponse({
-            status: Messages.SUCCESS,
-            payload: {room: data.room}
-        } as ResponseObject<ExtensionRoomPayload>)
-    });
 
     socket.on(SocketEvents.ROOM_DATA, (data: SocketRoomDataPayload) => {
         data.room.users.find(user => user.userId === socket.id).current = true
-        chrome.runtime.sendMessage({
-            message: Messages.TOPOPUP_ROOM_DATA,
-            payload: {room: data.room}
-        } as MessageObject<ExtensionRoomPayload>)
+        if (!userJoined) {
+            userJoined = true
+            sendResponse({
+                status: Messages.SUCCESS,
+                payload: {room: data.room}
+            } as ResponseObject<ExtensionRoomPayload>)
+        } else {
+            chrome.runtime.sendMessage({
+                message: Messages.TOPOPUP_ROOM_DATA,
+                payload: {room: data.room}
+            } as MessageObject<ExtensionRoomPayload>)
+        }
     })
 
     socket.on(SocketEvents.USER_CHANGE, (data: SocketUserChangePayload) => {
 
-        //cur socket is admin user of room and someone just joined, need to send them initial join data
-        if (data.changeEvent === UserChange.JOIN && data.admin.userId === socket.id) {
-            if (vidElem.readyState <= 2) {
-
-            }
-            socket.emit(SocketEvents.VIDEO_EVENT, { 
-                videoEvent: VideoEvent.JOIN, 
-                videoData: retrieveVideoData(), 
-                userIdToSendTo: data.changedUser.userId,
-                triggeringUserId: socket.id,
-                error: vidElem.readyState <= 2 ? 'Admins video is buffering. Please rejoin.' : null } as SocketCreateVideoEventPayload)
-        }
-
         //NOTIFICATION HERE
+    })
+
+    //THEORETICALLY ONLY ADMIN SHOULD RECIEVE THIS
+    socket.on(SocketEvents.SYNC_VIDEO_TO_ADMIN, (data: SocketSyncVideoPayload) => {
+        socket.emit(SocketEvents.VIDEO_EVENT, { 
+            videoEvent: data.userJoining ? VideoEvent.JOIN : VideoEvent.SYNC, 
+            videoData: retrieveVideoData(), 
+            userIdToSendTo: data.userId,
+            triggeringUserId: socket.id,
+            error: vidElem.readyState <= 2 ? 'Admins video is buffering. Please retry.' : null } as SocketCreateVideoEventPayload)
     })
 
     socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketGetVideoEventPayload) => {
         let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
         switch(videoEventData.videoEvent) {
+            case(VideoEvent.SYNC):
             case(VideoEvent.JOIN):
                 if(!!videoEventData.error) { // i.e admin is currently buffering
-                    socket.emit(SocketEvents.FORCE_DISCONNECT)
+                    if (videoEventData.videoEvent === VideoEvent.JOIN) {
+                        socket.emit(SocketEvents.FORCE_DISCONNECT)
+                    }
                     alert(videoEventData.error)
                     return
                 }
@@ -212,6 +214,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         establishSocketConnectionForExistingRoom(<ExtensionJoinRoomPayload>request.payload, sendResponse)
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
+        userJoined = false
         socket.emit(SocketEvents.FORCE_DISCONNECT)
         sendResponse({
             status: Messages.SUCCESS

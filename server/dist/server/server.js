@@ -24,7 +24,7 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
             }
             console.log(`User ${joinRoomData.userName} created room ${joinRoomData.roomName}`);
             socket.join(joinRoomData.roomId);
-            socket.emit(constants_1.SocketEvents.CONNECTED_TO_ROOM, { room: util_1.getRoom(joinRoomData.roomId) });
+            io.in(joinRoomData.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
         }
         else if (joinRoomData.action == constants_1.RoomAction.JOIN) {
             const { error, user } = util_1.addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false);
@@ -33,11 +33,11 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
             }
             console.log(`User ${joinRoomData.userName} joined room ${util_1.getRoom(joinRoomData.roomId).roomName}`);
             socket.join(joinRoomData.roomId);
-            socket.emit(constants_1.SocketEvents.CONNECTED_TO_ROOM, { room: util_1.getRoom(joinRoomData.roomId) });
-            socket.to(joinRoomData.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
-            socket.broadcast.to(joinRoomData.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
-                changeEvent: constants_1.UserChange.JOIN, changedUser: user, admin: util_1.getAdminUserFromRoom(joinRoomData.roomId)
+            io.in(joinRoomData.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
+            socket.to(joinRoomData.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
+                changeEvent: constants_1.UserChange.JOIN, changedUser: user
             });
+            socket.to(util_1.getAdminUserFromRoom(joinRoomData.roomId).userId).emit(constants_1.SocketEvents.SYNC_VIDEO_TO_ADMIN, { userId: socket.id, userJoining: true });
         }
         else {
             callback(`Invalid action. Must be ${constants_1.RoomAction.CREATE} OR ${constants_1.RoomAction.JOIN}`);
@@ -53,7 +53,7 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
                 videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error });
         }
         else {
-            socket.broadcast.to(util_1.getUserFromId(socket.id).roomId).emit(constants_1.SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
+            socket.to(util_1.getUserFromId(socket.id).roomId).emit(constants_1.SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
                 videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error });
         }
     });
@@ -65,10 +65,10 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
             console.log("shouldnt happen theoretiically");
             return false;
         }
-        socket.broadcast.to(deletedUser.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
-            changeEvent: constants_1.UserChange.DISCONNECT, changedUser: deletedUser, admin: util_1.getAdminUserFromRoom(deletedUser.roomId)
+        socket.to(deletedUser.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
+            changeEvent: constants_1.UserChange.DISCONNECT, changedUser: deletedUser
         });
-        socket.to(deletedUser.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(deletedUser.roomId) });
+        io.to(deletedUser.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(deletedUser.roomId) });
     });
     socket.on(constants_1.SocketEvents.FORCE_DISCONNECT, () => {
         socket.disconnect();

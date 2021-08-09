@@ -146,7 +146,7 @@ html, body {
     font-weight: 400;
     transition: background-color 1s;
 }
-#mainPage .actions .actionBtns button:hover{
+#mainPage .actions .actionBtns button:not(.disabledBtn):hover{
     cursor: pointer;
     background-color: black;
     color: white;
@@ -195,4 +195,8 @@ html, body {
 }
 .hidden{
     display: none;
+}
+.disabledBtn{
+    background-color: lightgrey;
+    color: grey;
 }

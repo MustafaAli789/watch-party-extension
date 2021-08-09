@@ -11,7 +11,7 @@ exports.SocketEvents = {
     GET_ROOM_DATA: 'get_room_data',
     RECIEVE_ROOM_DATA: 'recieve_room_data',
     VIDEO_EVENT: 'video_event',
-    SYNC_VIDEO_TO_ADMIN: 'sync_video_to_admin'
+    SYNC_VIDEO: 'sync_video'
 };
 var RoomAction;
 (function (RoomAction) {

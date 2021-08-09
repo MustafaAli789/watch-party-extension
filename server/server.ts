@@ -49,7 +49,7 @@ io.on(SocketEvents.CONNECTION, (socket) => {
       io.in(joinRoomData.roomId).emit(SocketEvents.ROOM_DATA, { room: getRoom(joinRoomData.roomId) } as SocketRoomDataPayload)
       socket.to(joinRoomData.roomId).emit(SocketEvents.USER_CHANGE, { 
         changeEvent: UserChange.JOIN, changedUser: user } as SocketUserChangePayload)
-      socket.to(getAdminUserFromRoom(joinRoomData.roomId).userId).emit(SocketEvents.SYNC_VIDEO_TO_ADMIN, { userId: socket.id, userJoining: true } as SocketSyncVideoPayload)
+      socket.to(getAdminUserFromRoom(joinRoomData.roomId).userId).emit(SocketEvents.SYNC_VIDEO, { userRequestingSync: user, userJoining: true } as SocketSyncVideoPayload)
     } else {
       callback(`Invalid action. Must be ${RoomAction.CREATE} OR ${RoomAction.JOIN}`)
     }
@@ -59,8 +59,32 @@ io.on(SocketEvents.CONNECTION, (socket) => {
     socket.emit(SocketEvents.RECIEVE_ROOM_DATA, { room: getRoomFromUserId(socket.id) } as SocketRoomDataPayload)
   })
 
-  socket.on(SocketEvents.SYNC_VIDEO_TO_ADMIN, () => {
-    socket.to(getAdminUserFromRoom(getRoomFromUserId(socket.id).roomId).userId).emit(SocketEvents.SYNC_VIDEO_TO_ADMIN, { userId: socket.id, userJoining: false } as SocketSyncVideoPayload)
+  socket.on(SocketEvents.SYNC_VIDEO, (data, callback) => {
+    let userRequestingSync = getUserFromId(socket.id)
+    let userRequestingsSyncRoomAdmin = getAdminUserFromRoom(userRequestingSync?.roomId)
+    let userToSendSyncReqTo = userRequestingsSyncRoomAdmin
+
+    if (userRequestingsSyncRoomAdmin) {
+      if (userRequestingSync.userId === userRequestingsSyncRoomAdmin.userId) { //i.e admin is requesting a syncing
+        let adminRoomUsers = getRoomFromUserId(userRequestingSync.userId).users
+        
+        if (adminRoomUsers.length === 1) {
+          callback('No one in room to sync to.')
+        }
+
+        let randomUserFromRoom = adminRoomUsers[Math.floor(Math.random()*adminRoomUsers.length)] //get random guy from room that is not admin
+        while (randomUserFromRoom.admin) {
+          randomUserFromRoom = adminRoomUsers[Math.floor(Math.random()*adminRoomUsers.length)]
+        }
+
+        userToSendSyncReqTo = randomUserFromRoom
+      }
+
+      socket.to(userToSendSyncReqTo.userId).emit(SocketEvents.SYNC_VIDEO, { userRequestingSync: userRequestingSync, userJoining: false } as SocketSyncVideoPayload)
+
+    } else {
+      callback("Unkown error.")
+    }
   })
 
   socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketCreateVideoEventPayload) => {

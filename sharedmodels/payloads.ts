@@ -35,6 +35,6 @@ export interface SocketGetVideoEventPayload {
 }
 
 export interface SocketSyncVideoPayload {
-    userId: string,
+    userRequestingSync: User,
     userJoining: Boolean
 }

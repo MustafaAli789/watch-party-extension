@@ -114,13 +114,19 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
     })
 
     //THEORETICALLY ONLY ADMIN SHOULD RECIEVE THIS
-    socket.on(SocketEvents.SYNC_VIDEO_TO_ADMIN, (data: SocketSyncVideoPayload) => {
+    socket.on(SocketEvents.SYNC_VIDEO, (data: SocketSyncVideoPayload) => {
+        let errMsg
+        if (data.userRequestingSync.admin) {
+            errMsg = 'User being synced to is buffering. Please retry.'
+        } else {
+            errMsg = 'Admins video is buffering. Please retry.'
+        }
         socket.emit(SocketEvents.VIDEO_EVENT, { 
             videoEvent: data.userJoining ? VideoEvent.JOIN : VideoEvent.SYNC, 
             videoData: retrieveVideoData(), 
-            userIdToSendTo: data.userId,
+            userIdToSendTo: data.userRequestingSync.userId,
             triggeringUserId: socket.id,
-            error: vidElem.readyState <= 2 ? 'Admins video is buffering. Please retry.' : null } as SocketCreateVideoEventPayload)
+            error: vidElem.readyState <= 2 ? errMsg : null } as SocketCreateVideoEventPayload)
     })
 
     socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketGetVideoEventPayload) => {
@@ -138,10 +144,10 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
                 socketVideoEventHappened.seek = true
                 socketVideoEventHappened.speed = true
                 vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec+0.5 // the +0.5 is to account for time it takes for vid to load
-                if (videoEventData.videoData.playing) {
+                if (videoEventData.videoData.playing && vidElem.paused) {
                     socketVideoEventHappened.play = true
                     vidElem.play()
-                } else {
+                } else if(!videoEventData.videoData.playing && !vidElem.paused) {
                     socketVideoEventHappened.pause = true
                     vidElem.pause()
                 }
@@ -233,7 +239,9 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
             payload: socket !== undefined && socket !== null
         } as ResponseObject<boolean>)
     } else if (request.message === Messages.TOFG_SYNC_VID) {
-        socket.emit(SocketEvents.SYNC_VIDEO_TO_ADMIN)
+        socket.emit(SocketEvents.SYNC_VIDEO, {}, (err) => {
+            alert(err)
+        })
         return true
     }
 });

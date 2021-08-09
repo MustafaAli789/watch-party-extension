@@ -80,7 +80,7 @@ leaveRoomBtn.addEventListener('click', _ => {
 })
 
 syncBtn.addEventListener('click', () => {
-    if (localUsers.find(user => user.current).admin) {
+    if (localUsers.length === 1){
         return
     }
     chrome.tabs.query({active:true, currentWindow: true}, tabs => {
@@ -179,6 +179,13 @@ const changePage = (pageMetadata: PageMetadata) => {
 
 const updateMainUsers = (users: Array<User>) => {
     localUsers = users
+    
+    if (localUsers.length === 1) {
+        syncBtn.classList.add("disabledBtn")
+    } else {
+        syncBtn.classList.remove("disabledBtn")
+    }
+
     usersListContainer.innerHTML = ""
     users.forEach(user => {
         let userElem = document.createElement("DIV");

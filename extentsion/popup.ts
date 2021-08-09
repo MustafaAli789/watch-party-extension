@@ -6,6 +6,8 @@ import { PageMetadata } from './models/pagemetadata';
 import { User } from '../sharedmodels/user'
 import {  } from '../sharedmodels/payloads'
 
+let localUsers: User[] = []
+
 //Containers
 const startPage: HTMLDivElement = document.querySelector("#startPage");
 const mainPage: HTMLDivElement = document.querySelector("#mainPage");
@@ -17,6 +19,7 @@ const newRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector(
 const joinRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#startPage .addItemContainer .joinRoomBtn");
 const leaveRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .backBtn");
 const copyImgBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .roomIdContainer .copyImgBtn");
+const syncBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .syncBtn")
 
 //Inputs
 const nameInput: HTMLInputElement = <HTMLInputElement>document.querySelector("#startPage .addItemContainer .nameInput");
@@ -26,6 +29,7 @@ const roomNameInput: HTMLInputElement = <HTMLInputElement>document.querySelector
 const errorMsgElem: HTMLParagraphElement = document.querySelector("#startPage .addItemContainer .error");
 const roomIdElem: HTMLSpanElement = document.querySelector('#mainPage .roomIdContainer .roomId');
 const roomNameElem: HTMLHeadingElement = document.querySelector("#mainPage .head .roomName");
+
 
 //Initial open of popup
 chrome.tabs.query({active:true, currentWindow: true}, tabs => {
@@ -73,6 +77,24 @@ joinRoomBtn.addEventListener('click', e => {
 
 leaveRoomBtn.addEventListener('click', _ => {
     leaveRoom()
+})
+
+syncBtn.addEventListener('click', () => {
+    if (localUsers.find(user => user.current).admin) {
+        return
+    }
+    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
+        let activeTabId = tabs[0].id
+        chrome.tabs.sendMessage(activeTabId, {
+            message: Messages.TOFG_IS_CHANNEL_OPEN
+        } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+            if (resp.status == Messages.SUCCESS && resp.payload) {
+                chrome.tabs.sendMessage(activeTabId, {
+                    message: Messages.TOFG_SYNC_VID
+                } as MessageObject<null>)
+            }
+        })
+    })
 })
 
 const leaveRoom = () => {
@@ -156,6 +178,7 @@ const changePage = (pageMetadata: PageMetadata) => {
 }
 
 const updateMainUsers = (users: Array<User>) => {
+    localUsers = users
     usersListContainer.innerHTML = ""
     users.forEach(user => {
         let userElem = document.createElement("DIV");

@@ -127,6 +127,36 @@ html, body {
 #mainPage .users .currentUser{
     background-color: #63b931;
 }
+#mainPage .actions {
+    margin-left: 10px;
+    margin-right: 30px;
+    margin-bottom: 10px;
+}
+#mainPage .actions .actionBtns {
+    margin-top: 2px;
+    display: flex;
+    justify-content: space-around;
+}
+#mainPage .actions .actionBtns button {
+    width: 49%;
+    border: none;
+    border-radius: 3px;
+    color: black;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    transition: background-color 1s;
+}
+#mainPage .actions .actionBtns button:hover{
+    cursor: pointer;
+    background-color: black;
+    color: white;
+}
+#mainPage .actions h3{
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+    color: black;
+    margin: 0px 0px 5px 0px;
+}
 #mainPage .backBtn:hover{
     background-color: #4888a1;
     cursor: pointer;

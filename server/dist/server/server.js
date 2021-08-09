@@ -46,6 +46,9 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
     socket.on(constants_1.SocketEvents.GET_ROOM_DATA, () => {
         socket.emit(constants_1.SocketEvents.RECIEVE_ROOM_DATA, { room: util_1.getRoomFromUserId(socket.id) });
     });
+    socket.on(constants_1.SocketEvents.SYNC_VIDEO_TO_ADMIN, () => {
+        socket.to(util_1.getAdminUserFromRoom(util_1.getRoomFromUserId(socket.id).roomId).userId).emit(constants_1.SocketEvents.SYNC_VIDEO_TO_ADMIN, { userId: socket.id, userJoining: false });
+    });
     socket.on(constants_1.SocketEvents.VIDEO_EVENT, (videoEventData) => {
         //send to specific socket only
         if (!!videoEventData.userIdToSendTo) {
@@ -58,11 +61,13 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
         }
     });
     socket.on(constants_1.SocketEvents.DISCONNECT, () => {
+        if (!util_1.getUserFromId(socket.id)) {
+            return;
+        }
         const { error, deletedUser } = util_1.removeUser(socket.id);
         console.log("Deleted user:");
         console.log(deletedUser);
         if (error) {
-            console.log("shouldnt happen theoretiically");
             return false;
         }
         socket.to(deletedUser.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {

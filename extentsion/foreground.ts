@@ -232,5 +232,8 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
             status: Messages.SUCCESS,
             payload: socket !== undefined && socket !== null
         } as ResponseObject<boolean>)
+    } else if (request.message === Messages.TOFG_SYNC_VID) {
+        socket.emit(SocketEvents.SYNC_VIDEO_TO_ADMIN)
+        return true
     }
 });

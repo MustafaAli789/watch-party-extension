@@ -59,6 +59,10 @@ io.on(SocketEvents.CONNECTION, (socket) => {
     socket.emit(SocketEvents.RECIEVE_ROOM_DATA, { room: getRoomFromUserId(socket.id) } as SocketRoomDataPayload)
   })
 
+  socket.on(SocketEvents.SYNC_VIDEO_TO_ADMIN, () => {
+    socket.to(getAdminUserFromRoom(getRoomFromUserId(socket.id).roomId).userId).emit(SocketEvents.SYNC_VIDEO_TO_ADMIN, { userId: socket.id, userJoining: false } as SocketSyncVideoPayload)
+  })
+
   socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketCreateVideoEventPayload) => {
   
     //send to specific socket only
@@ -72,13 +76,16 @@ io.on(SocketEvents.CONNECTION, (socket) => {
   })
 
   socket.on(SocketEvents.DISCONNECT, () => {
+    if(!getUserFromId(socket.id)) {
+      return
+    }
+
     const { error, deletedUser } = removeUser(socket.id)
   
     console.log("Deleted user:")
     console.log(deletedUser)
   
     if (error) {
-      console.log("shouldnt happen theoretiically")
       return false
     }
   

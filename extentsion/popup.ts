@@ -1,5 +1,5 @@
 import { Messages, Page } from './models/constants'
-import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionUserChangePayload } from './models/payloads';
+import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionSenderTabIdPayload, ExtensionUserChangePayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { PageMetadata } from './models/pagemetadata';
 
@@ -206,12 +206,13 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     //Check below is important b/c if we have multiple popups open in diff windows, we dont want all reacting to same event
     chrome.tabs.query({active: true, currentWindow:true}, tabs => {
         let curActiveTabId = tabs[0].id
-        if (sender.tab.id === curActiveTabId) {
-            if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
+        if (sender.tab?.id === curActiveTabId && request.message === Messages.TOPOPUP_ROOM_DATA) {
+            let reqData = <ExtensionRoomPayload>request.payload
+            updateMainUsers(reqData.room.users)
+        } else if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
+            let senderTabId = (<ExtensionSenderTabIdPayload>request.payload).tabId
+            if (senderTabId === curActiveTabId) {
                 leaveRoom()
-            } else if (request.message === Messages.TOPOPUP_ROOM_DATA) {
-                let reqData = <ExtensionRoomPayload>request.payload
-                updateMainUsers(reqData.room.users)
             }
         }
     })

@@ -17,3 +17,7 @@ export interface ExtensionJoinRoomPayload {
 export interface ExtensionUserChangePayload {
     message: string
 }
+
+export interface ExtensionSenderTabIdPayload {
+    tabId: number
+}

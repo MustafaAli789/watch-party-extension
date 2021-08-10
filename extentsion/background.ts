@@ -1,5 +1,6 @@
 import { Messages } from './models/constants'
 import { MessageObject, ResponseObject } from './models/messagepassing'
+import { ExtensionSenderTabIdPayload } from './models/payloads';
 
 // Updates needed
 /**
@@ -28,14 +29,10 @@ const tabChange = (tabId: number, event: string) => {
                 chrome.scripting.executeScript({
                     target: { tabId: tabId },
                     files: ["./foreground.js"]
-                }).then(() => {
-                    if(event === "onUpdated") { //i.e url change on existing tab
-                        setTimeout(() => {
-                            chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM } as MessageObject<null>)
-                        }, 500)
-                    }
                 })
             }).catch(err => console.log(err));
+        } else if(event === "onUpdated") { //i.e url changes but script continues to exist (ex: on youtube)
+            chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM, payload: { tabId: tabId } } as MessageObject<ExtensionSenderTabIdPayload>)
         }
     })                
 }

@@ -5,8 +5,6 @@ import { ExtensionSenderTabIdPayload } from './models/payloads';
 // Updates needed
 /**
  * - Actual notifs when user joins or leaves
- * - Color ur user darker
- * - Actual synch functionality
  * - future feature: chat box
  */
 
@@ -28,7 +26,19 @@ const tabChange = (tabId: number, event: string) => {
             .then(() => {
                 chrome.scripting.executeScript({
                     target: { tabId: tabId },
-                    files: ["./foreground.js"]
+                    files: ["./bootstrap/js/bootstrap.min.js"]
+                })
+                .then(() => {
+                    chrome.scripting.insertCSS({
+                        target: {tabId: tabId},
+                        files: ["./bootstrap/css/bootstrap.min.css"]
+                    })
+                    .then(() => {
+                        chrome.scripting.executeScript({
+                            target: { tabId: tabId },
+                            files: ["./foreground.js"]
+                        })
+                    })
                 })
             }).catch(err => console.log(err));
         } else if(event === "onUpdated") { //i.e url changes but script continues to exist (ex: on youtube)

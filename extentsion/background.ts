@@ -1,6 +1,6 @@
 import { Messages } from './models/constants'
 import { MessageObject, ResponseObject } from './models/messagepassing'
-import { ExtensionSenderTabIdPayload } from './models/payloads';
+import { ToFgSenderTabIdPayload } from './models/payloads';
 
 // Updates needed
 /**
@@ -42,7 +42,9 @@ const tabChange = (tabId: number, event: string) => {
                 })
             }).catch(err => console.log(err));
         } else if(event === "onUpdated") { //i.e url changes but script continues to exist (ex: on youtube)
-            chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM, payload: { tabId: tabId } } as MessageObject<ExtensionSenderTabIdPayload>)
+            setTimeout(() => {
+                chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM, payload: { tabId: tabId } } as MessageObject<ToFgSenderTabIdPayload>)
+            }, 1000)
         }
     })                
 }

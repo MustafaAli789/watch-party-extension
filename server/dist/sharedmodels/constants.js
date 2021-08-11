@@ -2,16 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserChange = exports.VideoEvent = exports.RoomAction = exports.SocketEvents = void 0;
 exports.SocketEvents = {
-    JOIN: 'join',
-    ROOM_DATA: 'room_data',
-    DISCONNECT: 'disconnect',
-    USER_CHANGE: 'user_change',
-    CONNECTION: 'connection',
-    FORCE_DISCONNECT: 'force_disconnect',
-    GET_ROOM_DATA: 'get_room_data',
-    RECIEVE_ROOM_DATA: 'recieve_room_data',
-    VIDEO_EVENT: 'video_event',
-    SYNC_VIDEO: 'sync_video'
+    TO_SERVER_JOIN: 'join',
+    TO_EXT_ROOM_DATA: 'room_data',
+    SERVER_DISCONNECT: 'disconnect',
+    TO_EXT_USER_CHANGE: 'user_change',
+    SERVER_CONNECTION: 'connection',
+    TO_SERVER_FORCE_DISCONNECT: 'force_disconnect',
+    TO_SERVER_ROOM_DATA: 'get_room_data',
+    TO_EXT_RECIEVE_ROOM_DATA: 'recieve_room_data',
+    TO_SERVER_TO_EXT_VIDEO_EVENT: 'video_event',
+    TO_SERVER_TO_EXT_SYNC_VIDEO: 'sync_video'
 };
 var RoomAction;
 (function (RoomAction) {

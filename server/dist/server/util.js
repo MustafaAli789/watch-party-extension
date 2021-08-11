@@ -28,6 +28,12 @@ class RoomImpl {
                 return null;
             }
         };
+        this.getCurrentUser = () => {
+            return this.users.find(user => user.current);
+        };
+        this.getAdminUser = () => {
+            return this.users.find(user => user.admin);
+        };
         this.roomId = roomId;
         this.roomName = roomName;
     }

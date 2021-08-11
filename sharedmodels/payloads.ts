@@ -3,38 +3,38 @@ import { Room } from './room'
 import { User } from './user';
 import { VideoData } from './videoData'
 
-export interface SocketJoinRoomPayload {
+export interface ToServerJoinRoomPayload {
     roomName?: string,
     userName: string,
     roomId: string,
     action: RoomAction
 }
 
-export interface SocketRoomDataPayload {
+export interface ToExtRoomDataPayload {
     room: Room
 }
 
-export interface SocketUserChangePayload {
-    changeEvent: UserChange,
+export interface ToExtUserChangePayload {
+    userChangeEvent: UserChange,
     changedUser: User
 }
 
-export interface SocketCreateVideoEventPayload {
+export interface ToServerVideoEventPayload {
     videoEvent: VideoEvent,
     videoData: VideoData,
-    triggeringUserId: string,
+    triggeringUser: User,
     userIdToSendTo?: string, //if specified, will send event to a specific user only,
     error?: string
 }
 
-export interface SocketGetVideoEventPayload {
+export interface ToExtVideoEventPayload {
     videoEvent: VideoEvent,
     videoData: VideoData,
     triggeringUser: User,
     error?: string
 }
 
-export interface SocketSyncVideoPayload {
+export interface ToExtSyncVideoPayload {
     userRequestingSync: User,
     userJoining: Boolean
 }

@@ -1,23 +1,19 @@
 import { Room } from "../../sharedmodels/room";
 
 //Payloads used in frontend only
-export interface ExtensionNewRoomPayload {
+export interface ToFgNewRoomPayload {
     userName: string,
     roomName: string
 }
-export interface ExtensionRoomPayload {
+export interface ToPopupRoomPayload {
     room: Room
 }
 
-export interface ExtensionJoinRoomPayload {
+export interface ToFgJoinRoomPayload {
     userName: string,
     roomId: string
 }
 
-export interface ExtensionUserChangePayload {
-    message: string
-}
-
-export interface ExtensionSenderTabIdPayload {
+export interface ToFgSenderTabIdPayload {
     tabId: number
 }

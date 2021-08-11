@@ -1,5 +1,5 @@
 import { Messages, Page } from './models/constants'
-import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionSenderTabIdPayload, ExtensionUserChangePayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToPopupRoomPayload, ToFgSenderTabIdPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { PageMetadata } from './models/pagemetadata';
 
@@ -42,7 +42,7 @@ chrome.tabs.query({active:true, currentWindow: true}, tabs => {
         if (resp.status == Messages.SUCCESS && resp.payload) {
             chrome.tabs.sendMessage(activeTabId, {
                 message: Messages.TOFG_RETRIEVE_ROOM_DATA
-            } as MessageObject<null>, (resp: ResponseObject<ExtensionRoomPayload>) => {
+            } as MessageObject<null>, (resp: ResponseObject<ToPopupRoomPayload>) => {
                 pageMetadata.roomId = resp.payload.room.roomId
                 pageMetadata.roomName = resp.payload.room.roomName
                 pageMetadata.pageType = Page.MAIN
@@ -122,7 +122,7 @@ copyImgBtn.addEventListener('click', () => {
 })
 
 const joinRoomWithValidation = () => {
-    let messageObject: MessageObject<ExtensionJoinRoomPayload> = { 
+    let messageObject: MessageObject<ToFgJoinRoomPayload> = { 
         message: Messages.TOFG_JOIN_ROOM_IN_TAB, 
         payload: {
             roomId: roomNameInput.value.trim(), 
@@ -133,7 +133,7 @@ const joinRoomWithValidation = () => {
 }
 
 const createNewRoomWithValidation = () => {
-    let messageObject: MessageObject<ExtensionNewRoomPayload> = { 
+    let messageObject: MessageObject<ToFgNewRoomPayload> = { 
         message: Messages.TOFG_CREATE_ROOM_IN_TAB, 
         payload: {
             roomName: roomNameInput.value.trim(), 
@@ -148,7 +148,7 @@ const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
         let activeTabId: number = tabs[0].id;
         chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
             if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
-                chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ExtensionRoomPayload>) => {
+                chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ToPopupRoomPayload>) => {
                     if (resp.status === Messages.SUCCESS) {
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
                         updateMainUsers(resp.payload.room.users)
@@ -202,15 +202,15 @@ const updateMainUsers = (users: Array<User>) => {
 
 // Message handler
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
-    
+    console.log('getting request here')
     //Check below is important b/c if we have multiple popups open in diff windows, we dont want all reacting to same event
     chrome.tabs.query({active: true, currentWindow:true}, tabs => {
         let curActiveTabId = tabs[0].id
         if (sender.tab?.id === curActiveTabId && request.message === Messages.TOPOPUP_ROOM_DATA) {
-            let reqData = <ExtensionRoomPayload>request.payload
+            let reqData = <ToPopupRoomPayload>request.payload
             updateMainUsers(reqData.room.users)
         } else if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
-            let senderTabId = (<ExtensionSenderTabIdPayload>request.payload).tabId
+            let senderTabId = (<ToFgSenderTabIdPayload>request.payload).tabId
             if (senderTabId === curActiveTabId) {
                 leaveRoom()
             }

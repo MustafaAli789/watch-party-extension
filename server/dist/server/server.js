@@ -7,8 +7,8 @@ const app = express();
 const http = require('http');
 const server = http.createServer(app);
 const io = require("socket.io")(server);
-io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
-    socket.on(constants_1.SocketEvents.JOIN, (joinRoomData, callback) => {
+io.on(constants_1.SocketEvents.SERVER_CONNECTION, (socket) => {
+    socket.on(constants_1.SocketEvents.TO_SERVER_JOIN, (joinRoomData, callback) => {
         if (!joinRoomData.roomId) {
             return callback('Missing roomid.');
         }
@@ -24,7 +24,7 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
             }
             console.log(`User ${joinRoomData.userName} created room ${joinRoomData.roomName}`);
             socket.join(joinRoomData.roomId);
-            io.in(joinRoomData.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
+            io.in(joinRoomData.roomId).emit(constants_1.SocketEvents.TO_EXT_ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
         }
         else if (joinRoomData.action == constants_1.RoomAction.JOIN) {
             const { error, user } = util_1.addUserToRoom(socket.id, joinRoomData.userName, joinRoomData.roomId, false);
@@ -33,20 +33,20 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
             }
             console.log(`User ${joinRoomData.userName} joined room ${util_1.getRoom(joinRoomData.roomId).roomName}`);
             socket.join(joinRoomData.roomId);
-            io.in(joinRoomData.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
-            socket.to(joinRoomData.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
-                changeEvent: constants_1.UserChange.JOIN, changedUser: user
+            io.in(joinRoomData.roomId).emit(constants_1.SocketEvents.TO_EXT_ROOM_DATA, { room: util_1.getRoom(joinRoomData.roomId) });
+            socket.to(joinRoomData.roomId).emit(constants_1.SocketEvents.TO_EXT_USER_CHANGE, {
+                userChangeEvent: constants_1.UserChange.JOIN, changedUser: user
             });
-            socket.to(util_1.getAdminUserFromRoom(joinRoomData.roomId).userId).emit(constants_1.SocketEvents.SYNC_VIDEO, { userRequestingSync: user, userJoining: true });
+            socket.to(util_1.getAdminUserFromRoom(joinRoomData.roomId).userId).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, { userRequestingSync: user, userJoining: true });
         }
         else {
             callback(`Invalid action. Must be ${constants_1.RoomAction.CREATE} OR ${constants_1.RoomAction.JOIN}`);
         }
     });
-    socket.on(constants_1.SocketEvents.GET_ROOM_DATA, () => {
-        socket.emit(constants_1.SocketEvents.RECIEVE_ROOM_DATA, { room: util_1.getRoomFromUserId(socket.id) });
+    socket.on(constants_1.SocketEvents.TO_SERVER_ROOM_DATA, () => {
+        socket.emit(constants_1.SocketEvents.TO_EXT_RECIEVE_ROOM_DATA, { room: util_1.getRoomFromUserId(socket.id) });
     });
-    socket.on(constants_1.SocketEvents.SYNC_VIDEO, (data, callback) => {
+    socket.on(constants_1.SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, (data, callback) => {
         let userRequestingSync = util_1.getUserFromId(socket.id);
         let userRequestingsSyncRoomAdmin = util_1.getAdminUserFromRoom(userRequestingSync === null || userRequestingSync === void 0 ? void 0 : userRequestingSync.roomId);
         let userToSendSyncReqTo = userRequestingsSyncRoomAdmin;
@@ -62,24 +62,24 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
                 }
                 userToSendSyncReqTo = randomUserFromRoom;
             }
-            socket.to(userToSendSyncReqTo.userId).emit(constants_1.SocketEvents.SYNC_VIDEO, { userRequestingSync: userRequestingSync, userJoining: false });
+            socket.to(userToSendSyncReqTo.userId).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, { userRequestingSync: userRequestingSync, userJoining: false });
         }
         else {
             callback("Unkown error.");
         }
     });
-    socket.on(constants_1.SocketEvents.VIDEO_EVENT, (videoEventData) => {
+    socket.on(constants_1.SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, (videoEventData) => {
         //send to specific socket only
         if (!!videoEventData.userIdToSendTo) {
-            socket.to(videoEventData.userIdToSendTo).emit(constants_1.SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
-                videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error });
+            socket.to(videoEventData.userIdToSendTo).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
+                videoData: videoEventData.videoData, triggeringUser: videoEventData.triggeringUser, error: videoEventData.error });
         }
         else {
-            socket.to(util_1.getUserFromId(socket.id).roomId).emit(constants_1.SocketEvents.VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
-                videoData: videoEventData.videoData, triggeringUser: util_1.getUserFromId(videoEventData.triggeringUserId), error: videoEventData.error });
+            socket.to(util_1.getUserFromId(socket.id).roomId).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { videoEvent: videoEventData.videoEvent,
+                videoData: videoEventData.videoData, triggeringUser: videoEventData.triggeringUser, error: videoEventData.error });
         }
     });
-    socket.on(constants_1.SocketEvents.DISCONNECT, () => {
+    socket.on(constants_1.SocketEvents.SERVER_DISCONNECT, () => {
         if (!util_1.getUserFromId(socket.id)) {
             return;
         }
@@ -89,12 +89,12 @@ io.on(constants_1.SocketEvents.CONNECTION, (socket) => {
         if (error) {
             return false;
         }
-        socket.to(deletedUser.roomId).emit(constants_1.SocketEvents.USER_CHANGE, {
-            changeEvent: constants_1.UserChange.DISCONNECT, changedUser: deletedUser
+        socket.to(deletedUser.roomId).emit(constants_1.SocketEvents.TO_EXT_USER_CHANGE, {
+            userChangeEvent: constants_1.UserChange.DISCONNECT, changedUser: deletedUser
         });
-        io.to(deletedUser.roomId).emit(constants_1.SocketEvents.ROOM_DATA, { room: util_1.getRoom(deletedUser.roomId) });
+        io.to(deletedUser.roomId).emit(constants_1.SocketEvents.TO_EXT_ROOM_DATA, { room: util_1.getRoom(deletedUser.roomId) });
     });
-    socket.on(constants_1.SocketEvents.FORCE_DISCONNECT, () => {
+    socket.on(constants_1.SocketEvents.TO_SERVER_FORCE_DISCONNECT, () => {
         socket.disconnect();
     });
 });

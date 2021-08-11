@@ -6,5 +6,4 @@ export interface Room {
     users: User[];
     addUser: (user: User) => void;
     removeUserFromRoom: (userId: string) => User;
-
 }

@@ -39,6 +39,12 @@ export class RoomImpl implements Room {
             return null
         }
     }
+    getCurrentUser = () => {
+        return this.users.find(user => user.current)
+    }
+    getAdminUser = () => {
+        return this.users.find(user => user.admin)
+    }
 }
 
 const rooms: Array<Room> = []

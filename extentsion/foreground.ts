@@ -1,12 +1,14 @@
 import { Messages } from './models/constants'
-import { ExtensionJoinRoomPayload, ExtensionNewRoomPayload, ExtensionRoomPayload, ExtensionUserChangePayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
-import {  SocketJoinRoomPayload, SocketRoomDataPayload, SocketUserChangePayload, SocketCreateVideoEventPayload, SocketGetVideoEventPayload, SocketSyncVideoPayload } from '../sharedmodels/payloads'
+import {  ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload } from '../sharedmodels/payloads'
 import { VideoData } from '../sharedmodels/videoData';
 
 import { Socket, io } from 'socket.io-client'; 
+import { Room } from '../sharedmodels/room';
+import { User } from '../sharedmodels/user';
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
@@ -16,7 +18,7 @@ var socketVideoEventHappened = {
     seek: false,
     speed: false
 }
-var userJoined = false
+var currentRoom: Room = null
 
 var notifContainer = document.createElement('DIV')
 notifContainer.id = "notifContainer"
@@ -27,6 +29,10 @@ var notifCount = 0
 var isSeeking = false;
 var seekedTimeout;
 var SEEKEVENT_TIMEOUT = 50;
+
+const getCurUser = (room: Room): User => {
+    return room.users.find(user => user.current)
+}
 
 //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
 const guid = (): string => {
@@ -39,19 +45,19 @@ const guid = (): string => {
     return s4() + s4() + '-' + s4() + '-' + s4();
 }
 
-const establishSocketConnectionForNewRoom = (newRoomData: ExtensionNewRoomPayload, sendResponse) => {
+const establishSocketConnectionForNewRoom = (newRoomData: ToFgNewRoomPayload, sendResponse) => {
     //theoretically should be unique
     let roomId: string = guid()
-    let roomData: SocketJoinRoomPayload = {roomName: newRoomData.roomName, userName: newRoomData.userName, roomId: roomId, action: RoomAction.CREATE}
+    let roomData: ToServerJoinRoomPayload = {roomName: newRoomData.roomName, userName: newRoomData.userName, roomId: roomId, action: RoomAction.CREATE}
     createSocketConnection(roomData, sendResponse)
 }
 
-const establishSocketConnectionForExistingRoom = (joinRoomData: ExtensionJoinRoomPayload, sendResponse) => {
-    let roomData: SocketJoinRoomPayload = {roomName: null, userName: joinRoomData.userName, roomId: joinRoomData.roomId, action: RoomAction.JOIN}
+const establishSocketConnectionForExistingRoom = (joinRoomData: ToFgJoinRoomPayload, sendResponse) => {
+    let roomData: ToServerJoinRoomPayload = {roomName: null, userName: joinRoomData.userName, roomId: joinRoomData.roomId, action: RoomAction.JOIN}
     createSocketConnection(roomData, sendResponse)
 }
 
-const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) => {
+const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse) => {
 
     vidElem.onplay = function() {
         if (socketVideoEventHappened.play) {
@@ -59,19 +65,19 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
             return
         }
         if (!isSeeking) {
-            socket.emit(SocketEvents.VIDEO_EVENT, { 
+            socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
                 videoEvent: VideoEvent.PLAY, 
                 videoData: retrieveVideoData(), 
-                triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+                triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
         } else {
             let videoData = retrieveVideoData()
             videoData.playing = true //dont know why it isnt ready state isnt > 2 here but oh well
 
             // case: when vid is playing and someone seeks vid by dragging or clicking some time
-            socket.emit(SocketEvents.VIDEO_EVENT, { 
+            socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
                 videoEvent: VideoEvent.SEEK, 
                 videoData: videoData, 
-                triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+                triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
         }
     }
     vidElem.onpause = function() {
@@ -80,14 +86,15 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
             return
         }
         seekedTimeout = setTimeout(() => {
-            socket.emit(SocketEvents.VIDEO_EVENT, { 
+            socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
                 videoEvent: VideoEvent.PAUSE, 
                 videoData: retrieveVideoData(), 
-                triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+                triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
         }, SEEKEVENT_TIMEOUT)
     }
 
     // when u seek either by dragging current point or clicking somewhere in time it goes pause --> seeking --> play --> seeked
+    // insp from: https://stackoverflow.com/questions/61698738/html5-video-calls-onpause-and-onplay-event-when-seeking
     vidElem.onseeking = function() {
         clearTimeout(seekedTimeout)
         isSeeking = true
@@ -100,10 +107,10 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
         }
         //case: when vid is paused and someone seeks vid by dragging or clicking some time
         if (vidElem.paused) {
-            socket.emit(SocketEvents.VIDEO_EVENT, { 
+            socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
                 videoEvent: VideoEvent.SEEK, 
                 videoData: retrieveVideoData(), 
-                triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+                triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
         }
     }
     vidElem.onratechange = function() {
@@ -111,68 +118,68 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
             socketVideoEventHappened.speed = false
             return
         }
-        socket.emit(SocketEvents.VIDEO_EVENT, { 
+        socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
             videoEvent: VideoEvent.SPEED, 
             videoData: retrieveVideoData(), 
-            triggeringUserId: socket.id } as SocketCreateVideoEventPayload)
+            triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
     }
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
     socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
-    socket.emit(SocketEvents.JOIN, roomData, (err) => {
-        socket.emit(SocketEvents.FORCE_DISCONNECT)
+    socket.emit(SocketEvents.TO_SERVER_JOIN, roomData, (err) => {
+        socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
         addNotif({ headerMsg: 'Join Error', bodyMsg: err, type: 'ERROR' })
     })
 
-    socket.on(SocketEvents.ROOM_DATA, (data: SocketRoomDataPayload) => {
+    socket.on(SocketEvents.TO_EXT_ROOM_DATA, (data: ToExtRoomDataPayload) => {
         data.room.users.find(user => user.userId === socket.id).current = true
-        if (!userJoined) {
-            userJoined = true
+        if (currentRoom === null) {
             sendResponse({
                 status: Messages.SUCCESS,
                 payload: {room: data.room}
-            } as ResponseObject<ExtensionRoomPayload>)
+            } as ResponseObject<ToPopupRoomPayload>)
         } else {
             chrome.runtime.sendMessage({
                 message: Messages.TOPOPUP_ROOM_DATA,
                 payload: {room: data.room}
-            } as MessageObject<ExtensionRoomPayload>)
+            } as MessageObject<ToPopupRoomPayload>)
         }
+        currentRoom = data.room
     })
 
-    socket.on(SocketEvents.USER_CHANGE, (data: SocketUserChangePayload) => {
-        if (data.changeEvent === UserChange.JOIN) {
-            addNotif({ headerMsg: 'User Joined', type: 'NOTIF', bodyMsg:  `User ${data.changedUser.userName} joined room.` })
-        } else if (data.changeEvent === UserChange.DISCONNECT) {
-            addNotif({ headerMsg: 'User Left', type: 'NOTIF', bodyMsg:  `User ${data.changedUser.userName} left room.` })
+    socket.on(SocketEvents.TO_EXT_USER_CHANGE, (data: ToExtUserChangePayload) => {
+        if (data.userChangeEvent === UserChange.JOIN) {
+            addNotif({ headerMsg: 'User Joined', type: 'SPECIAL', bodyMsg:  `User ${data.changedUser.userName} joined room.` })
+        } else if (data.userChangeEvent === UserChange.DISCONNECT) {
+            addNotif({ headerMsg: 'User Left', type: 'SPECIAL', bodyMsg:  `User ${data.changedUser.userName} left room.` })
         }
     })
 
     //THEORETICALLY ONLY ADMIN SHOULD RECIEVE THIS
-    socket.on(SocketEvents.SYNC_VIDEO, (data: SocketSyncVideoPayload) => {
+    socket.on(SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, (data: ToExtSyncVideoPayload) => {
         let errMsg
         if (data.userRequestingSync.admin) {
             errMsg = 'User being synced to is buffering. Please retry.'
         } else {
             errMsg = 'Admins video is buffering. Please retry.'
         }
-        socket.emit(SocketEvents.VIDEO_EVENT, { 
+        socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
             videoEvent: data.userJoining ? VideoEvent.JOIN : VideoEvent.SYNC, 
             videoData: retrieveVideoData(), 
             userIdToSendTo: data.userRequestingSync.userId,
-            triggeringUserId: socket.id,
-            error: vidElem.readyState <= 2 ? errMsg : null } as SocketCreateVideoEventPayload)
+            triggeringUser: getCurUser(currentRoom),
+            error: vidElem.readyState <= 2 ? errMsg : null } as ToServerVideoEventPayload)
     })
 
-    socket.on(SocketEvents.VIDEO_EVENT, (videoEventData: SocketGetVideoEventPayload) => {
+    socket.on(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, (videoEventData: ToExtVideoEventPayload) => {
         let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
         switch(videoEventData.videoEvent) {
             case(VideoEvent.SYNC):
             case(VideoEvent.JOIN):
                 if(!!videoEventData.error) { // i.e admin is currently buffering
                     if (videoEventData.videoEvent === VideoEvent.JOIN) {
-                        socket.emit(SocketEvents.FORCE_DISCONNECT)
+                        socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
                     }
                     alert(videoEventData.error)
                     return
@@ -222,6 +229,7 @@ const createSocketConnection = (roomData: SocketJoinRoomPayload, sendResponse) =
                 socketVideoEventHappened.seek = true
                 vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec 
                 
+                // https://stackoverflow.com/questions/1322732/convert-seconds-to-hh-mm-ss-with-javascript
                 let timeSeekedReadable = new Date(videoEventData.videoData.playbackTime * 1000).toISOString().substr(11, 8)
                 if (videoEventData.videoData.playing && vidElem.paused) {
                     socketVideoEventHappened.play = true
@@ -243,23 +251,10 @@ const retrieveVideoData = (): VideoData => {
     }
 }
 
-const retrieveRoomData = (sendResponse) => {
-    socket.emit(SocketEvents.GET_ROOM_DATA)
-
-    //this could be an issue with multiple of these socket connections being opened
-    socket.on(SocketEvents.RECIEVE_ROOM_DATA, (data: SocketRoomDataPayload) => {
-        data.room.users.find(user => user.userId === socket.id).current = true
-        sendResponse({
-            status: Messages.SUCCESS,
-            payload: {room: data.room}
-        } as ResponseObject<ExtensionRoomPayload>)
-    })
-}
-
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
     if (request.message === Messages.TOFG_VIDEO_ON_SCREEN) {
         vidElem = document.querySelector('video')
-        if (vidElem?.offsetParent != null && vidElem?.offsetParent != undefined) {
+        if (vidElem?.offsetParent != null && vidElem?.offsetParent != undefined) { //to ensure video is actually visible
             sendResponse({
                 status: Messages.SUCCESS,
                 payload: true
@@ -274,19 +269,22 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
 
         return true;
     }  else if (request.message === Messages.TOFG_CREATE_ROOM_IN_TAB) {
-        establishSocketConnectionForNewRoom(<ExtensionNewRoomPayload>request.payload, sendResponse)
+        establishSocketConnectionForNewRoom(<ToFgNewRoomPayload>request.payload, sendResponse)
         return true
     } else if(request.message === Messages.TOFG_JOIN_ROOM_IN_TAB) {
-        establishSocketConnectionForExistingRoom(<ExtensionJoinRoomPayload>request.payload, sendResponse)
+        establishSocketConnectionForExistingRoom(<ToFgJoinRoomPayload>request.payload, sendResponse)
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
-        userJoined = false
-        socket.emit(SocketEvents.FORCE_DISCONNECT)
+        currentRoom = null
+        socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
         sendResponse({
             status: Messages.SUCCESS
         } as ResponseObject<null>)
     } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
-        retrieveRoomData(sendResponse)
+        sendResponse({
+            status: Messages.SUCCESS,
+            payload: {room: currentRoom}
+        } as ResponseObject<ToPopupRoomPayload>)
         return true
     } else if (request.message === Messages.TOFG_DO_YOU_EXIST) {
         sendResponse({
@@ -299,19 +297,19 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
             payload: socket !== undefined && socket !== null
         } as ResponseObject<boolean>)
     } else if (request.message === Messages.TOFG_SYNC_VID) {
-        socket.emit(SocketEvents.SYNC_VIDEO, {}, (err) => {
+        socket.emit(SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, {}, (err) => {
             addNotif({ headerMsg: 'Sync Error', bodyMsg: err, type: 'ERROR' })
         })
         return true
     }
 });
 
-const addNotif = (data: { headerMsg: string, bodyMsg: string, type: 'ERROR' | 'NOTIF' | 'SUCCESS' }) => {
+const addNotif = (data: { headerMsg: string, bodyMsg: string, type: 'ERROR' | 'NOTIF' | 'SUCCESS' | 'SPECIAL' }) => {
     notifCount++
     let toast = document.createElement('DIV');
     toast.id = `toast${notifCount}`
 
-    let color = data.type === 'ERROR' ? 'red' : (data.type === 'NOTIF' ? 'blue' : 'green')
+    let color = data.type === 'ERROR' ? 'red' : (data.type === 'NOTIF' ? 'blue' : (data.type === 'SPECIAL' ? 'purple' : 'green'))
     toast.innerHTML = `<div style="z-index: 9999" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" style="display: block">
             <div class="toast-header">

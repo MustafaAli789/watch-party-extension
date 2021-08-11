@@ -1,3 +1,4 @@
+import { Message } from '../sharedmodels/message';
 import { Room } from '../sharedmodels/room'
 import { User } from '../sharedmodels/user'
 
@@ -20,6 +21,7 @@ export class RoomImpl implements Room {
     roomId: string;
     roomName: string;
     users: User[] = [];
+    messages: Message[] = []
     constructor(roomId: string, roomName: string) {
         this.roomId = roomId;
         this.roomName = roomName

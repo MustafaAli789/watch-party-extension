@@ -7,6 +7,7 @@ import { User } from '../sharedmodels/user'
 import {  } from '../sharedmodels/payloads'
 
 let localUsers: User[] = []
+let chatToggled: Boolean = true
 
 //Containers
 const startPage: HTMLDivElement = document.querySelector("#startPage");
@@ -48,8 +49,10 @@ chrome.tabs.query({active:true, currentWindow: true}, tabs => {
                 pageMetadata.roomId = resp.payload.room.roomId
                 pageMetadata.roomName = resp.payload.room.roomName
                 pageMetadata.pageType = Page.MAIN
+                chatToggled = resp.payload.chatOpen
+
                 updateMainUsers(resp.payload.room.users)
-                setChatOpenToggle(resp.payload.chatOpen)
+                setChatOpenToggle(chatToggled)
                 changePage(pageMetadata)
             }) 
         }
@@ -95,6 +98,24 @@ syncBtn.addEventListener('click', () => {
                 chrome.tabs.sendMessage(activeTabId, {
                     message: Messages.TOFG_SYNC_VID
                 } as MessageObject<null>)
+            }
+        })
+    })
+})
+chatToggleBtn.addEventListener('click', () => {
+    chatToggled = !chatToggled
+    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
+        let activeTabId = tabs[0].id
+        chrome.tabs.sendMessage(activeTabId, {
+            message: Messages.TOFG_IS_CHANNEL_OPEN
+        } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+            if (resp.status == Messages.SUCCESS && resp.payload) {
+                chrome.tabs.sendMessage(activeTabId, {
+                    message: Messages.TOFG_CHAT_TOGGLE,
+                    payload: chatToggled
+                } as MessageObject<Boolean>, resp =>{
+                    setChatOpenToggle(chatToggled)
+                })
             }
         })
     })

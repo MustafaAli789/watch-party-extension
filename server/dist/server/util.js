@@ -13,6 +13,7 @@ exports.UserImpl = UserImpl;
 class RoomImpl {
     constructor(roomId, roomName) {
         this.users = [];
+        this.messages = [];
         this.addUser = (user) => {
             this.users.push(user);
         };

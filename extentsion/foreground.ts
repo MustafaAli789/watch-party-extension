@@ -9,6 +9,7 @@ import { VideoData } from '../sharedmodels/videoData';
 import { Socket, io } from 'socket.io-client'; 
 import { Room } from '../sharedmodels/room';
 import { User } from '../sharedmodels/user';
+import { Message } from '../sharedmodels/message';
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
@@ -146,11 +147,15 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 status: Messages.SUCCESS,
                 payload: {room: data.room, chatOpen: chatOpen}
             } as ResponseObject<ToPopupRoomPayload>)
-        } else {
+            createChatComponent()
+            updateChat(data.room.messages)
+        } else if(currentRoom.users !== data.room.users) {
             chrome.runtime.sendMessage({
                 message: Messages.TOPOPUP_ROOM_DATA,
                 payload: {room: data.room}
             } as MessageObject<ToPopupRoomPayload>)
+        } else if (currentRoom.messages !== data.room.messages) {
+            updateChat(data.room.messages)
         }
         currentRoom = data.room
     })
@@ -309,6 +314,13 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
             addNotif({ headerMsg: 'Sync Error', bodyMsg: err, type: 'ERROR' })
         })
         return true
+    } else if (request.message === Messages.TOFG_CHAT_TOGGLE) {
+        chatOpen = request.payload
+        if (request.payload) {
+            chatContainer.classList.remove('removeFromView')
+        } else {
+            chatContainer.classList.add('removeFromView')
+        }
     }
 });
 
@@ -377,7 +389,9 @@ const createChatComponent = () => {
     })
 }
 
-createChatComponent()
+const updateChat = (messages: Message[]) => {
+    // update chat here
+}
 
 
 

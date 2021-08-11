@@ -19,5 +19,3 @@ export enum Messages{
     TOFG_IS_CHANNEL_OPEN,
     TOBG_USER_DISCONNECTED
 }
-
-export const TabsStorage = "active_tabs_watchparty"

@@ -13,7 +13,3 @@ export interface ToFgJoinRoomPayload {
     userName: string,
     roomId: string
 }
-
-export interface ToFgSenderTabIdPayload {
-    tabId: number
-}

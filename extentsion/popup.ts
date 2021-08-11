@@ -1,5 +1,5 @@
 import { Messages, Page } from './models/constants'
-import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToPopupRoomPayload, ToFgSenderTabIdPayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { PageMetadata } from './models/pagemetadata';
 
@@ -202,18 +202,13 @@ const updateMainUsers = (users: Array<User>) => {
 
 // Message handler
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
-    console.log('getting request here')
+
     //Check below is important b/c if we have multiple popups open in diff windows, we dont want all reacting to same event
     chrome.tabs.query({active: true, currentWindow:true}, tabs => {
         let curActiveTabId = tabs[0].id
         if (sender.tab?.id === curActiveTabId && request.message === Messages.TOPOPUP_ROOM_DATA) {
             let reqData = <ToPopupRoomPayload>request.payload
             updateMainUsers(reqData.room.users)
-        } else if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
-            let senderTabId = (<ToFgSenderTabIdPayload>request.payload).tabId
-            if (senderTabId === curActiveTabId) {
-                leaveRoom()
-            }
         }
     })
     return true

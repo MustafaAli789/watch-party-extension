@@ -1,6 +1,5 @@
 import { Messages } from './models/constants'
 import { MessageObject, ResponseObject } from './models/messagepassing'
-import { ToFgSenderTabIdPayload } from './models/payloads';
 
 // Updates needed
 /**
@@ -42,9 +41,7 @@ const tabChange = (tabId: number, event: string) => {
                 })
             }).catch(err => console.log(err));
         } else if(event === "onUpdated") { //i.e url changes but script continues to exist (ex: on youtube)
-            setTimeout(() => {
-                chrome.runtime.sendMessage({ message: Messages.TOPOPUP_LEAVE_ROOM, payload: { tabId: tabId } } as MessageObject<ToFgSenderTabIdPayload>)
-            }, 1000)
+            chrome.tabs.sendMessage(tabId, { message: Messages.TOFG_DISCONNECT} as MessageObject<null>)
         }
     })                
 }

@@ -146,10 +146,15 @@ html, body {
     font-weight: 400;
     transition: background-color 1s;
 }
-#mainPage .actions .actionBtns button:not(.disabledBtn):hover{
+#mainPage .actions .actionBtns button:not(.disabledBtn):not(.toggledBtn):hover{
     cursor: pointer;
     background-color: black;
     color: white;
+}
+#mainPage .actions .actionBtns .toggledBtn:hover{
+    cursor: pointer;
+    background-color: white;
+    color: black;
 }
 #mainPage .actions h3{
     font-family: 'Roboto', sans-serif;
@@ -160,6 +165,10 @@ html, body {
 #mainPage .backBtn:hover{
     background-color: #4888a1;
     cursor: pointer;
+}
+#mainPage .actions .actionBtns .toggledBtn{
+    background-color: black;
+    color: white;
 }
 
 /* -----COMMON----- */

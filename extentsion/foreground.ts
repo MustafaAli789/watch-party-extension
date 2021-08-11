@@ -19,12 +19,19 @@ var socketVideoEventHappened = {
     speed: false
 }
 var currentRoom: Room = null
+var chatOpen: Boolean = true
 
+// Notif Container
 var notifContainer = document.createElement('DIV')
 notifContainer.id = "notifContainer"
 notifContainer.classList.add('toast-container', 'position-fixed', 'bottom-0', 'end-0', 'p-3')
 document.querySelector('body').appendChild(notifContainer)
 var notifCount = 0
+
+// Chat Container
+var chatContainer = document.createElement('DIV')
+chatContainer.id = "chatContainer"
+document.querySelector('body').appendChild(chatContainer)
 
 var isSeeking = false;
 var seekedTimeout;
@@ -71,7 +78,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
         } else {
             let videoData = retrieveVideoData()
-            videoData.playing = true //dont know why it isnt ready state isnt > 2 here but oh well
+            videoData.playing = true //dont know why it isnt ready state isnt > 2 here but oh well, we'll just say its playing manually
 
             // case: when vid is playing and someone seeks vid by dragging or clicking some time
             socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
@@ -137,7 +144,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
         if (currentRoom === null) {
             sendResponse({
                 status: Messages.SUCCESS,
-                payload: {room: data.room}
+                payload: {room: data.room, chatOpen: chatOpen}
             } as ResponseObject<ToPopupRoomPayload>)
         } else {
             chrome.runtime.sendMessage({
@@ -276,6 +283,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
         currentRoom = null
+        chatOpen = true
         socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
         sendResponse({
             status: Messages.SUCCESS
@@ -283,7 +291,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
         sendResponse({
             status: Messages.SUCCESS,
-            payload: {room: currentRoom}
+            payload: {room: currentRoom, chatOpen: chatOpen}
         } as ResponseObject<ToPopupRoomPayload>)
         return true
     } else if (request.message === Messages.TOFG_DO_YOU_EXIST) {
@@ -338,4 +346,38 @@ const removeNotif = (toastId: string) => {
     toast.parentElement.removeChild(toast)
     notifCount--
 }
+
+// inspo https://stackoverflow.com/questions/21426056/horizontal-sliding-panel-with-relative-postion-handle-show-hide-jquery
+const createChatComponent = () => {
+    chatContainer.innerHTML = `<div class="panel">
+        <div>
+        <h1>Heading</h1>
+        </div>
+        <div>
+            <p>Body data</p>
+        </div>
+    </div>
+    <a href="javascript:void(0);" class="slider-arrow show">&laquo;</a>`
+
+    let sliderArrow = document.querySelector(".slider-arrow")
+    sliderArrow.addEventListener('click', () => {
+        if (sliderArrow.classList.contains('show')) {
+            (<HTMLDivElement>document.querySelector(".panel")).style.right = "0px";
+            (<HTMLAnchorElement>document.querySelector(".slider-arrow")).style.right = "300px";
+            sliderArrow.innerHTML = '&raquo;'
+            sliderArrow.classList.remove('show')
+            sliderArrow.classList.add('hide')
+        } else {
+            (<HTMLDivElement>document.querySelector(".panel")).style.right = "-300px";
+            (<HTMLAnchorElement>document.querySelector(".slider-arrow")).style.right = "0px";
+            sliderArrow.innerHTML = '&laquo;'
+            sliderArrow.classList.remove('hide')
+            sliderArrow.classList.add('show')
+        }
+    })
+}
+
+createChatComponent()
+
+
 

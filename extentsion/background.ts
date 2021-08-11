@@ -33,9 +33,15 @@ const tabChange = (tabId: number, event: string) => {
                         files: ["./bootstrap/css/bootstrap.min.css"]
                     })
                     .then(() => {
-                        chrome.scripting.executeScript({
-                            target: { tabId: tabId },
-                            files: ["./foreground.js"]
+                        chrome.scripting.insertCSS({
+                            target: {tabId: tabId},
+                            files: ["./css/foreground.css"]
+                        })
+                        .then(() => {
+                            chrome.scripting.executeScript({
+                                target: { tabId: tabId },
+                                files: ["./foreground.js"]
+                            })
                         })
                     })
                 })

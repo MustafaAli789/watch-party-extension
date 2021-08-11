@@ -6,7 +6,8 @@ export interface ToFgNewRoomPayload {
     roomName: string
 }
 export interface ToPopupRoomPayload {
-    room: Room
+    room: Room,
+    chatOpen: Boolean
 }
 
 export interface ToFgJoinRoomPayload {

@@ -20,6 +20,8 @@ const joinRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector
 const leaveRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .backBtn");
 const copyImgBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .roomIdContainer .copyImgBtn");
 const syncBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .syncBtn")
+const chatToggleBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .chatToggle")
+
 
 //Inputs
 const nameInput: HTMLInputElement = <HTMLInputElement>document.querySelector("#startPage .addItemContainer .nameInput");
@@ -47,6 +49,7 @@ chrome.tabs.query({active:true, currentWindow: true}, tabs => {
                 pageMetadata.roomName = resp.payload.room.roomName
                 pageMetadata.pageType = Page.MAIN
                 updateMainUsers(resp.payload.room.users)
+                setChatOpenToggle(resp.payload.chatOpen)
                 changePage(pageMetadata)
             }) 
         }
@@ -152,6 +155,7 @@ const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
                     if (resp.status === Messages.SUCCESS) {
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
                         updateMainUsers(resp.payload.room.users)
+                        setChatOpenToggle(resp.payload.chatOpen)
                     }
                 })
             }
@@ -198,6 +202,14 @@ const updateMainUsers = (users: Array<User>) => {
         userElem.innerHTML = userIcon+`<span style="margin-left:5px">${userName}</span>`;
         usersListContainer.append(userElem);
     });
+}
+
+const setChatOpenToggle = (chatOpen: Boolean) => {
+    if (chatOpen) {
+        chatToggleBtn.classList.add('toggledBtn')
+    } else {
+        chatToggleBtn.classList.remove('toggledBtn')
+    }
 }
 
 // Message handler

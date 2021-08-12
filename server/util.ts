@@ -66,13 +66,16 @@ export const addRoom = (roomId: string, roomName: string): void => {
 }
 
 export const addUserToRoom = (userId: string, userName: string, roomId: string, admin: Boolean): {error: string, user: User} => {
-    let uName: string = userName.trim().toLowerCase();
+    let uName: string = userName.trim().toLowerCase().replace(/ /g,"_");
 
     const existingRoom: Room = rooms.find(room => room.roomId == roomId)
 
     if (!existingRoom) {
         return {error:  `Room with id ${roomId} does not exist.`, user: null}
     }
+    if (uName === "" || uName === null){
+        return {error: "Username cannot be empty", user: null}
+    } 
     if (existingRoom.users.find(user => user.userName.trim() === userName.trim())) {
         return {error:  `User with username ${userName.trim()} already exists in room.`, user: null}
     }

@@ -12,6 +12,7 @@ var notifCount = 0
 var chatContainer = document.createElement('DIV')
 chatContainer.id = "chatContainer"
 chatContainer.classList.add('removeFromView')
+chatContainer.style.zIndex = "9999999999999"
 document.querySelector('body').appendChild(chatContainer)
 
 export const addNotif = (data: { headerMsg: string, bodyMsg: string, type: 'ERROR' | 'NOTIF' | 'SUCCESS' | 'SPECIAL' }) => {
@@ -61,6 +62,16 @@ export const createChatComponent = (roomName: string) => {
             </div>
         </div>
         <div class="messages"></div>
+        <div class="mainInputContainer">
+            <div class="inputField">
+                <form class="form">
+                    <input class="input" type="text" placeholder="Type a message...">
+                </form>
+            </div>
+            <div class="buttonsContainer">
+                <button class="sendButton">Send</button>
+            </div>
+        </div>
     </div>
     <div id="sliderContainer">
   	    <div id="notifs">99</div>
@@ -130,7 +141,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
                                 </div> 
                             </div>
                             <div class="col-1 d-flex align-items-end justify-content-center" style="padding:0;">
-                                <div class="profileImage" style="background-color:${msg.user.color};"></div>
+                                <div class="profileImage" title="${msg.timestamp}" style="background-color:${msg.user.color};"></div>
                             </div>
                         </div> 
                     </div>
@@ -151,7 +162,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
                         </div>
                         <div class="row">
                             <div class="col-1 d-flex align-items-end justify-content-center" style="padding:0;">
-                                <div class="profileImage" style="background-color:${profileImgColor};"></div>
+                                <div class="profileImage" title="${msg.timestamp}" style="background-color:${profileImgColor};"></div>
                             </div>
                             <div class="col-11 d-flex align-items-end" style="padding-left: 0;">
                                 <div class="messageBox ${bgColor}">

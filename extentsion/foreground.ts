@@ -32,6 +32,10 @@ var SEEKEVENT_TIMEOUT = 50;
 const getCurUser = (room: Room): User => {
     return room.users.find(user => user.current)
 }
+const getHourAndMinFormatted = (): string => {
+    let curDate: Date = new Date()
+    return `${curDate.getHours()}:${curDate.getMinutes()}:${curDate.getSeconds()}`
+}
 
 //https://learnersbucket.com/examples/javascript/unique-id-generator-in-javascript/
 const guid = (): string => {
@@ -145,10 +149,9 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             toggleChatComponentContainerInView(true)
             createChatComponent(currentRoom.roomName)
 
-            let testMsg1: Message = { user: null, content: "User tinky has joined the chat", timestamp: Date.now().toString() }
-            let testMsg2: Message = { user: getCurUser(currentRoom), content: "Hey whats up dudes my gs lets go wagaan", timestamp: Date.now().toString() }
+            let initWelcomeMsg: Message = { user: null, content: `${getCurUser(currentRoom).userName}, welcome to room ${currentRoom.roomName}`, timestamp: getHourAndMinFormatted() }
 
-            updateChat([testMsg1, testMsg2], getCurUser(currentRoom))
+            updateChat([initWelcomeMsg], getCurUser(currentRoom))
         } else if(currentRoom.users !== data.room.users) {
             currentRoom = data.room
             chrome.runtime.sendMessage({
@@ -159,11 +162,17 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
     })
 
     socket.on(SocketEvents.TO_EXT_USER_CHANGE, (data: ToExtUserChangePayload) => {
+        let userChangeMsgContent: string
         if (data.userChangeEvent === UserChange.JOIN) {
+            userChangeMsgContent = `${data.changedUser.userName} joined the room`
             addNotif({ headerMsg: 'User Joined', type: 'SPECIAL', bodyMsg:  `User ${data.changedUser.userName} joined room.` })
         } else if (data.userChangeEvent === UserChange.DISCONNECT) {
+            userChangeMsgContent = `${data.changedUser.userName} left the room`
             addNotif({ headerMsg: 'User Left', type: 'SPECIAL', bodyMsg:  `User ${data.changedUser.userName} left room.` })
         }
+
+        let userChangeMsg: Message = { user: null, content: userChangeMsgContent, timestamp: getHourAndMinFormatted() }
+        updateChat([userChangeMsg], getCurUser(currentRoom))
     })
 
     //THEORETICALLY ONLY ADMIN SHOULD RECIEVE THIS

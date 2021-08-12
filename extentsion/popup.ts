@@ -66,6 +66,10 @@ const validRoomInput = () => {
         errorMsgElem.classList.remove('hidden');
         errorMsgElem.innerHTML = 'Please enter a room/id';
         return false;
+    } else if (nameInput.value.trim().length < 3) {
+        errorMsgElem.classList.remove('hidden');
+        errorMsgElem.innerHTML = 'Please enter a username longer than 3 chars';
+        return false;
     } else {
         errorMsgElem.classList.add('hidden');
         errorMsgElem.innerHTML = '';

@@ -1,0 +1,109 @@
+<div class="infoBar">
+    <div class="leftInnerContainer">
+        <div class="roomCircle"></div>
+        <h1></h1>
+    </div>
+    <div class="rightInnerContainer">
+        <a href="/">X</a>
+    </div>
+</div>
+
+<div class="messages">
+
+</div>
+
+//someone else like admin or some shit
+<div class="message" style="margin-top: 1rem;">
+    <div class="container">
+        <div class="row">
+            <div class="col-1"></div>
+            <div class="col-11 pl-2 pr-0">
+                <p class="sentText mb-0"></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-1 d-flex align-items-end justify-content-center">
+                <div class="profileImage"></div>
+            </div>
+            <div class="col-11 d-flex align-items-end">
+                <div class="messageBox">
+                    <p class="messageText"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+//ur own
+<div class="message" style="margin-top: 1rem;">
+    <div className='container'>
+        <div className="row">
+            <div className="col-11 pl-0 pr-2 d-flex justify-content-end">
+                <p className='sentText mb-0'></p>
+            </div>
+            <div className="col-1 pl-0 pr-0">
+            </div>
+        </div>
+        <div className="row">
+            <div className="col-11 d-flex align-items-end justify-content-end">
+                <div className='messageBox backgroundBlue'></div> 
+            </div>
+            <div className="col-1 d-flex align-items-end justify-content-center">
+                <div class="profileImage"></div>
+            </div>
+        </div> 
+    </div>
+</div>
+
+<div class="messages" style="
+    padding-bottom: 5%;
+    /* overflow: auto; */
+    flex-grow: 1;
+    /* height: auto; */
+"><div class="css-y1c0xs" style="
+    height: 100%;
+    overflow-y: auto;
+    width: 100%;
+"><div style="margin-top: 1rem;"><div class="container" style="
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+"><div class="row"><div class="col-1 pl-0 pr-0"></div><div class="col-11 pl-2 pr-0"><p class="sentText mb-0" style="
+    display: flex;
+    align-items: center;
+    font-family: Helvetica;
+    color: #828282;
+    letter-spacing: .3px;
+    font-size: 1.3em;
+">admin</p></div></div><div class="row"><div class="col-1 d-flex align-items-end pr-0 pl-0 justify-content-center" style="
+    padding-right: 0;
+    padding-left: 0;
+"><div class="profileImage" style="
+    height: 25px;
+    width: 25px;
+"><img src="data:image/png;base64,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" style="
+    height: 100%;
+    width: 25px;
+    border-radius: 50%;
+    object-fit: cover;
+"></div></div><div class="col-11 d-flex align-items-end pl-0" style="
+    padding-left: 0;
+"><div class="messageBox backgroundAdmin" style="
+    background: #f3f3f3;
+    border-radius: 20px;
+    padding: 5px 20px;
+    color: #fff;
+    display: inline-block;
+    max-width: 80%;
+    background-color: #16e1bc;
+"><p class="messageText colorDark" style="
+    width: 100%;
+    letter-spacing: 0;
+    float: left;
+    font-size: 1.5em;
+    word-wrap: break-word;
+    margin-bottom: 0;
+    color: #353535;
+">tanga, welcome to the room toongus</p></div></div></div></div></div></div></div>

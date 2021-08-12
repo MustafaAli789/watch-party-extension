@@ -1,8 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAdminUserFromRoom = exports.getUserFromId = exports.getRoomFromUserId = exports.getRoom = exports.removeUser = exports.addUserToRoom = exports.addRoom = exports.RoomImpl = exports.UserImpl = void 0;
+// https://stackoverflow.com/questions/1484506/random-color-generator
+function get_random_color() {
+    function c() {
+        var hex = Math.floor(Math.random() * 256).toString(16);
+        return ("0" + String(hex)).substr(-2); // pad with zero
+    }
+    return "#" + c() + c() + c();
+}
 class UserImpl {
     constructor(userId, userName, roomId, admin) {
+        this.color = get_random_color();
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;

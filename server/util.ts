@@ -2,9 +2,19 @@ import { Message } from '../sharedmodels/message';
 import { Room } from '../sharedmodels/room'
 import { User } from '../sharedmodels/user'
 
+// https://stackoverflow.com/questions/1484506/random-color-generator
+function get_random_color() {
+    function c() {
+      var hex = Math.floor(Math.random()*256).toString(16);
+      return ("0"+String(hex)).substr(-2); // pad with zero
+    }
+    return "#"+c()+c()+c();
+}
+
 export class UserImpl implements User {
     userId: string;
     userName: string;
+    color: string = get_random_color();
     roomId: string;
     admin: Boolean;
     current?: Boolean;

@@ -1,10 +1,10 @@
 /* https://stackoverflow.com/questions/21426056/horizontal-sliding-panel-with-relative-postion-handle-show-hide-jquery */
 .panel {
-    width:300px;
-    height:550px;
+    width:400px;
+    height:600px;
     background:#d9dada;
     position:fixed;
-    right:-300px;
+    right:-400px;
     transition: 0.5s;
 }
 
@@ -16,15 +16,130 @@
     color:#000;
     text-decoration:none;
     position:relative;
-    right:0px;
-    transition: 0.5s;
-	top:5px;
 }
 #chatContainer {
 	position: fixed;
     top:100px;
-    right: 0;
+    right: -1px;
 }
 .removeFromView {
     display: none;
+}
+
+#sliderContainer{
+	position:relative;
+    right:0px;
+    top:2px;
+    transition: 0.5s;
+}
+#notifs{
+	background-color: #f76a6a;
+    font-size: 10px;
+    position: relative;
+    top: 5px;
+    border-radius: 50%;
+    right: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    min-width: 20px;
+    min-height: 20px;
+    line-height: 20px;
+    z-index: 1;
+}
+
+.infoBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2979ff;
+    border-radius: 4px 4px 0 0;
+    height: 60px;
+    width: 100%;
+}
+
+.leftInnerContainer, .rightInnerContainer {
+    flex: 0.5 1;
+    display: flex;
+    align-items: center;
+}
+
+.leftInnerContainer {
+    margin-left: 5%;
+    color: #fff;
+}
+
+.rightInnerContainer{
+    justify-content: flex-end;
+    margin-right: 5%;
+}
+
+.roomCircle {
+    width: 1em;
+    height: 1em;
+    margin-right: 5%;
+    background-color: rgb(44, 249, 44);
+    border-radius: 50%;
+}
+
+.rightInnerContainer a{
+    color: white;
+    width: 1em;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+/* Messages Container */
+
+.messages {
+    padding-bottom: 5%;
+    overflow: auto;
+    flex-grow: 1;
+}
+.container {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+.sentText {
+    display: flex;
+    align-items: center;
+    font-family: Helvetica;
+    color: #828282;
+    letter-spacing: .3px;
+    font-size: 1.3em;
+}
+.profileImage{
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+}
+.messageBox{
+    background: #f3f3f3;
+    border-radius: 20px;
+    padding: 5px 20px;
+    color: #fff;
+    display: inline-block;
+    max-width: 80%;
+}
+.backgroundAutomated{
+    background-color: #16e1bc;
+}
+.backgroundBlue {
+    background: #2979FF;
+}
+  
+.backgroundLight {
+    background: #F3F3F3;
+}
+.messageText {
+    width: 100%;
+    letter-spacing: 0;
+    float: left;
+    font-size: 1.5em;
+    word-wrap: break-word;
+    margin-bottom: 0;
 }

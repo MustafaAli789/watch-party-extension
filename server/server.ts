@@ -3,6 +3,9 @@ import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId, getAdmi
 import { SocketEvents, RoomAction, UserChange } from '../sharedmodels/constants'
 
 import { ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload } from '../sharedmodels/payloads'
+import { Message } from '../sharedmodels/message';
+import { User } from '../sharedmodels/user';
+import { Room } from '../sharedmodels/room';
 
 const express = require('express');
 const app = express();
@@ -97,6 +100,12 @@ io.on(SocketEvents.SERVER_CONNECTION, (socket) => {
       socket.to(getUserFromId(socket.id).roomId).emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { videoEvent: videoEventData.videoEvent, 
         videoData: videoEventData.videoData, triggeringUser: videoEventData.triggeringUser, error: videoEventData.error } as ToExtVideoEventPayload)
     }
+  })
+
+  socket.on(SocketEvents.TO_SERVER_TO_EXT_CHAT, (msg: Message) => {
+    let user: User = getUserFromId(socket.id)
+    getRoomFromUserId(user.userId).messages.push(msg)
+    socket.to(getUserFromId(socket.id)?.roomId).emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
   })
 
   socket.on(SocketEvents.SERVER_DISCONNECT, () => {

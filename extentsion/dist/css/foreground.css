@@ -96,8 +96,10 @@
 
 .messages {
     padding-bottom: 5%;
-    overflow: auto;
     flex-grow: 1;
+    overflow-y: scroll;
+    max-height: 490px;
+    overflow-x: auto;
 }
 .container {
     width: 100%;

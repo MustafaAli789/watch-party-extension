@@ -79,6 +79,12 @@ io.on(constants_1.SocketEvents.SERVER_CONNECTION, (socket) => {
                 videoData: videoEventData.videoData, triggeringUser: videoEventData.triggeringUser, error: videoEventData.error });
         }
     });
+    socket.on(constants_1.SocketEvents.TO_SERVER_TO_EXT_CHAT, (msg) => {
+        var _a;
+        let user = util_1.getUserFromId(socket.id);
+        util_1.getRoomFromUserId(user.userId).messages.push(msg);
+        socket.to((_a = util_1.getUserFromId(socket.id)) === null || _a === void 0 ? void 0 : _a.roomId).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_CHAT, msg);
+    });
     socket.on(constants_1.SocketEvents.SERVER_DISCONNECT, () => {
         if (!util_1.getUserFromId(socket.id)) {
             return;

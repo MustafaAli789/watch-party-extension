@@ -147,11 +147,11 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             } as ResponseObject<ToPopupRoomPayload>)
 
             toggleChatComponentContainerInView(true)
-            createChatComponent(currentRoom.roomName)
+            createChatComponent(currentRoom.roomName, socket, getCurUser(currentRoom))
 
             let initWelcomeMsg: Message = { user: null, content: `${getCurUser(currentRoom).userName}, welcome to room ${currentRoom.roomName}`, timestamp: getHourAndMinFormatted() }
 
-            updateChat([initWelcomeMsg], getCurUser(currentRoom))
+            updateChat([...currentRoom.messages,initWelcomeMsg], getCurUser(currentRoom))
         } else if(currentRoom.users !== data.room.users) {
             currentRoom = data.room
             chrome.runtime.sendMessage({
@@ -173,6 +173,10 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
         let userChangeMsg: Message = { user: null, content: userChangeMsgContent, timestamp: getHourAndMinFormatted() }
         updateChat([userChangeMsg], getCurUser(currentRoom))
+    })
+
+    socket.on(SocketEvents.TO_SERVER_TO_EXT_CHAT, (msg: Message) => {
+        updateChat([msg], getCurUser(currentRoom))
     })
 
     //THEORETICALLY ONLY ADMIN SHOULD RECIEVE THIS

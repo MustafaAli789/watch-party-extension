@@ -1,5 +1,12 @@
+import { Socket } from "socket.io-client"
+import { SocketEvents } from "../sharedmodels/constants"
 import { Message } from "../sharedmodels/message"
 import { User } from "../sharedmodels/user"
+
+const getHourAndMinFormatted = (): string => {
+    let curDate: Date = new Date()
+    return `${curDate.getHours()}:${curDate.getMinutes()}:${curDate.getSeconds()}`
+}
 
 // Notif Container
 var notifContainer = document.createElement('DIV')
@@ -50,7 +57,7 @@ const removeNotif = (toastId: string) => {
 }
 
 // inspo https://stackoverflow.com/questions/21426056/horizontal-sliding-panel-with-relative-postion-handle-show-hide-jquery
-export const createChatComponent = (roomName: string) => {
+export const createChatComponent = (roomName: string, socket: Socket, curUser: User) => {
     chatContainer.innerHTML = `<div class="panel" style="background-color:white;">
         <div class="infoBar">
             <div class="leftInnerContainer">
@@ -87,6 +94,31 @@ export const createChatComponent = (roomName: string) => {
         e.preventDefault()
         slideChatComponent()
     })
+
+    let input: HTMLInputElement = document.querySelector('.input')
+    input.addEventListener('keydown', (key: KeyboardEvent) => {
+        if (key.code === 'Enter' && input.value.trim().length > 0) {
+            sendMsg(socket, curUser, input.value)
+            input.value = ""
+        }
+    })
+    document.querySelector('.sendButton').addEventListener('.click', () => {
+        if (input.value.trim().length > 0) {
+            sendMsg(socket, curUser, input.value)
+            input.value = ""
+        }
+    })
+
+    document.querySelector('.form').addEventListener('submit', e => {
+        e.preventDefault()
+    })
+
+}
+
+const sendMsg = (socket: Socket, curUser: User, content: string) => {
+    let msg: Message = { user: curUser, content: content, timestamp: getHourAndMinFormatted() }
+    socket.emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
+    updateChat([msg], curUser)
 }
 
 const slideChatComponent = () => {
@@ -122,10 +154,10 @@ export const deleteChatComponent = () => {
 }
 
 export const updateChat = (messages: Message[], curUser: User) => {
-    let messagesContianer: HTMLDivElement = document.querySelector('.messages')
+    let messagesContainer: HTMLDivElement = document.querySelector('.messages')
     messages.forEach(msg => {
         if (curUser.userId === msg.user?.userId) { //cur user msg
-            messagesContianer.innerHTML += ` 
+            messagesContainer.innerHTML += ` 
                 <div class="message" style="margin-top: 1rem;">
                     <div class='container'>
                         <div class="row">
@@ -151,7 +183,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
             let bgColor = msg.user === null ? 'backgroundAutomated' : 'backgroundLight'
             let profileImgColor = msg.user === null ? 'black' : msg.user.color
             let username = msg.user === null ? 'roombot' : msg.user.userName
-            messagesContianer.innerHTML += ` 
+            messagesContainer.innerHTML += ` 
                 <div class="message" style="margin-top: 1rem;">
                     <div class="container">
                         <div class="row">
@@ -175,4 +207,6 @@ export const updateChat = (messages: Message[], curUser: User) => {
             `
         }
     })
+    messagesContainer.scrollTop = messagesContainer.scrollHeight
+
 }

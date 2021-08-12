@@ -13,7 +13,6 @@ import { Message } from '../sharedmodels/message';
 
 import { addNotif, createChatComponent, deleteChatComponent, updateChat, toggleChatComponentContainerInView  } from './foregroundUi'
 
-
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
 var socketVideoEventHappened = {
@@ -72,15 +71,6 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 videoEvent: VideoEvent.PLAY, 
                 videoData: retrieveVideoData(), 
                 triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
-        } else {
-            let videoData = retrieveVideoData()
-            videoData.playing = true //dont know why it isnt ready state isnt > 2 here but oh well, we'll just say its playing manually
-
-            // case: when vid is playing and someone seeks vid by dragging or clicking some time
-            socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
-                videoEvent: VideoEvent.SEEK, 
-                videoData: videoData, 
-                triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
         }
     }
     vidElem.onpause = function() {
@@ -96,7 +86,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
         }, SEEKEVENT_TIMEOUT)
     }
 
-    // when u seek either by dragging current point or clicking somewhere in time it goes pause --> seeking --> play --> seeked
+    // when u seek either by dragging current point or clicking somewhere in time it goes pause --> seeking --> play --> seeked on YOUTUBE but other place had seeing --> seeked only smhh
     // insp from: https://stackoverflow.com/questions/61698738/html5-video-calls-onpause-and-onplay-event-when-seeking
     vidElem.onseeking = function() {
         clearTimeout(seekedTimeout)
@@ -108,13 +98,13 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             socketVideoEventHappened.seek = false
             return
         }
+        
         //case: when vid is paused and someone seeks vid by dragging or clicking some time
-        if (vidElem.paused) {
-            socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
-                videoEvent: VideoEvent.SEEK, 
-                videoData: retrieveVideoData(), 
-                triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
-        }
+        // case: when vid is playing and someone seeks vid by dragging or clicking some time
+        socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
+            videoEvent: VideoEvent.SEEK, 
+            videoData: retrieveVideoData(), 
+            triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
     }
     vidElem.onratechange = function() {
         if (socketVideoEventHappened.speed) {

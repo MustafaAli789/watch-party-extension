@@ -81,7 +81,7 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         </div>
     </div>
     <div id="sliderContainer">
-  	    <div id="notifs">99</div>
+  	    <div id="notifs">0</div>
   	    <a href="javascript:void(0);" class="slider-arrow show">&laquo;</a>
     </div>`
 
@@ -123,13 +123,18 @@ const sendMsg = (socket: Socket, curUser: User, content: string) => {
 
 const slideChatComponent = () => {
     let sliderArrow = document.querySelector(".slider-arrow")
-    if (sliderArrow.classList.contains('show')) {
+    if (sliderArrow.classList.contains('show')) { //opening
         (<HTMLDivElement>document.querySelector(".panel")).style.right = "0px";
         (<HTMLDivElement>document.querySelector("#sliderContainer")).style.right = "400px";
         sliderArrow.innerHTML = '&raquo;'
         sliderArrow.classList.remove('show')
         sliderArrow.classList.add('hide')
-    } else {
+
+        let chatNotifIndicator: HTMLDivElement = document.querySelector('#notifs')
+        chatNotifIndicator.classList.add('removeFromView')
+        chatNotifIndicator.innerHTML = "0"
+
+    } else { //closing
         (<HTMLDivElement>document.querySelector(".panel")).style.right = "-400px";
         (<HTMLDivElement>document.querySelector("#sliderContainer")).style.right = "0px";
         sliderArrow.innerHTML = '&laquo;'
@@ -154,6 +159,17 @@ export const deleteChatComponent = () => {
 }
 
 export const updateChat = (messages: Message[], curUser: User) => {
+
+    //i.e chat panel is closed and u recieved message/messages
+    if(document.querySelector(".slider-arrow").classList.contains('show')) {
+        let chatNotifIndicator: HTMLDivElement = document.querySelector('#notifs')
+        chatNotifIndicator.classList.remove('removeFromView')
+
+        let curNotifCount: number = parseInt(chatNotifIndicator.innerHTML)
+        curNotifCount += messages.length
+        chatNotifIndicator.innerHTML = curNotifCount.toString()
+    }
+
     let messagesContainer: HTMLDivElement = document.querySelector('.messages')
     messages.forEach(msg => {
         if (curUser.userId === msg.user?.userId) { //cur user msg

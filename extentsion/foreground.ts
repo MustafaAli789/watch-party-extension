@@ -169,7 +169,6 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
         updateChat([msg], getCurUser(currentRoom))
     })
 
-    //THEORETICALLY ONLY ADMIN SHOULD RECIEVE THIS
     socket.on(SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, (data: ToExtSyncVideoPayload) => {
         let errMsg
         if (data.userRequestingSync.admin) {

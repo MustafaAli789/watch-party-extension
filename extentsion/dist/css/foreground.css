@@ -1,3 +1,15 @@
+/* Notif Toasts */
+#notifContainer {
+    z-index: 999;
+}
+.toast-body {
+    background: white;
+}
+.toast-header{
+    background-color: lightgrey;
+    border-bottom: 1px solid black;
+}
+
 /* https://stackoverflow.com/questions/21426056/horizontal-sliding-panel-with-relative-postion-handle-show-hide-jquery */
 .panel {
     width:400px;

@@ -224,7 +224,7 @@ const updateMainUsers = (users: Array<User>) => {
         }
         let userIcon = (user.admin ? "<img class='userIcon' src='../images/adminUser.png' alt='adminuser'>" : "<img class='userIcon' src='../images/user.png' alt='normaluser'>")
         let userName = (!!user.current ? `<strong>${user.userName}</strong>` : `${user.userName}`)
-        userElem.innerHTML = userIcon+`<span style="margin-left:5px">${userName}</span>`;
+        userElem.innerHTML = userIcon+`<span style="margin-left:5px; max-width: 80%; word-break: break-all">${userName}</span>`+`<div class="userColorCircle" style="background-color:${user.color}"></div>`;
         usersListContainer.append(userElem);
     });
 }

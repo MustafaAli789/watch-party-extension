@@ -102,7 +102,7 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
             input.value = ""
         }
     })
-    document.querySelector('.sendButton').addEventListener('.click', () => {
+    document.querySelector('.sendButton').addEventListener('click', () => {
         if (input.value.trim().length > 0) {
             sendMsg(socket, curUser, input.value)
             input.value = ""

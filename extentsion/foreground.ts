@@ -198,7 +198,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                     return
                 }
                 socketVideoEventHappened.seek = true
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec+0.5 // the +0.5 is to account for time it takes for vid to load
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec
                 
                 if (videoEventData.videoData.playing && vidElem.paused) {
                     socketVideoEventHappened.play = true

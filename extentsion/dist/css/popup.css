@@ -75,9 +75,14 @@ html, body {
 }
 #mainPage .head{
     display: flex;
+    align-items: center;
+    margin-right: 10px;
 }
 #mainPage .head h1{
     margin: 0px 0px 0px 10px;
+}
+#mainPage .head .roomName {
+    word-break: break-all;
 }
 #mainPage .roomIdContainer {
     display: flex;
@@ -113,7 +118,7 @@ html, body {
 }
 #mainPage .users .userElem{
     padding: 4px;
-    background-color: #f1a2a2;
+    background-color: white;
     border-radius: 4px;
     font-family: 'Roboto', sans-serif;
     font-weight: 400;
@@ -124,8 +129,15 @@ html, body {
 #mainPage .users .userElem .userIcon{
     width: 23px;
 }
+#mainPage .users .userElem .userColorCircle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-left: auto;
+    border: 1px solid black;
+}
 #mainPage .users .currentUser{
-    background-color: #63b931;
+    background-color: #d0d0d0;
 }
 #mainPage .actions {
     margin-left: 10px;

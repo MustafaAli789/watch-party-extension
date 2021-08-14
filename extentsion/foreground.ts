@@ -1,5 +1,5 @@
 import { Messages } from './models/constants'
-import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToPopupRoomPayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
@@ -15,14 +15,16 @@ import { addNotif, createChatComponent, deleteChatComponent, updateChat, toggleC
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
-var socketVideoEventHappened = {
+var algorithmicVideoEventHappened = {
     play: false,
     pause: false,
     seek: false,
+    seeking: false,
     speed: false
 }
 var currentRoom: Room = null
 var chatOpen: Boolean = false
+var offsetTime: number = 0
 
 var isSeeking = false;
 var seekedTimeout;
@@ -62,8 +64,8 @@ const establishSocketConnectionForExistingRoom = (joinRoomData: ToFgJoinRoomPayl
 const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse) => {
 
     vidElem.onplay = function() {
-        if (socketVideoEventHappened.play) {
-            socketVideoEventHappened.play = false
+        if (algorithmicVideoEventHappened.play) {
+            algorithmicVideoEventHappened.play = false
             return
         }
         if (!isSeeking) {
@@ -74,8 +76,8 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
         }
     }
     vidElem.onpause = function() {
-        if (socketVideoEventHappened.pause) {
-            socketVideoEventHappened.pause = false
+        if (algorithmicVideoEventHappened.pause) {
+            algorithmicVideoEventHappened.pause = false
             return
         }
         seekedTimeout = setTimeout(() => {
@@ -89,13 +91,17 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
     // when u seek either by dragging current point or clicking somewhere in time it goes pause --> seeking --> play --> seeked on YOUTUBE but other place had seeing --> seeked only smhh
     // insp from: https://stackoverflow.com/questions/61698738/html5-video-calls-onpause-and-onplay-event-when-seeking
     vidElem.onseeking = function() {
+        if (algorithmicVideoEventHappened.seeking) {
+            algorithmicVideoEventHappened.seeking = false
+            return
+        }
         clearTimeout(seekedTimeout)
         isSeeking = true
     }
     vidElem.onseeked = function() {
         isSeeking = false
-        if (socketVideoEventHappened.seek) {
-            socketVideoEventHappened.seek = false
+        if (algorithmicVideoEventHappened.seek) {
+            algorithmicVideoEventHappened.seek = false
             return
         }
         
@@ -107,8 +113,8 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             triggeringUser: getCurUser(currentRoom) } as ToServerVideoEventPayload)
     }
     vidElem.onratechange = function() {
-        if (socketVideoEventHappened.speed) {
-            socketVideoEventHappened.speed = false
+        if (algorithmicVideoEventHappened.speed) {
+            algorithmicVideoEventHappened.speed = false
             return
         }
         socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
@@ -133,7 +139,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
             sendResponse({
                 status: Messages.SUCCESS,
-                payload: {room: currentRoom, chatOpen: chatOpen}
+                payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: offsetTime}
             } as ResponseObject<ToPopupRoomPayload>)
 
             toggleChatComponentContainerInView(true)
@@ -196,19 +202,19 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                     alert(videoEventData.error)
                     return
                 }
-                socketVideoEventHappened.seek = true
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec
+                algorithmicVideoEventHappened.seek = true
+                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec + offsetTime
                 
                 if (videoEventData.videoData.playing && vidElem.paused) {
-                    socketVideoEventHappened.play = true
+                    algorithmicVideoEventHappened.play = true
                     vidElem.play()
                 } else if(!videoEventData.videoData.playing && !vidElem.paused) {
-                    socketVideoEventHappened.pause = true
+                    algorithmicVideoEventHappened.pause = true
                     vidElem.pause()
                 }
 
                 if (vidElem.playbackRate !== videoEventData.videoData.speed) {
-                    socketVideoEventHappened.speed = true
+                    algorithmicVideoEventHappened.speed = true
                     vidElem.playbackRate = videoEventData.videoData.speed
                 }
                 
@@ -223,28 +229,28 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
                 break;
             case(VideoEvent.PLAY):
-                socketVideoEventHappened.play = true
+                algorithmicVideoEventHappened.play = true
                 vidElem.play()
                 addNotif({ headerMsg: 'Play Video', type: 'NOTIF', bodyMsg:  `User ${videoEventData.triggeringUser.userName} played video.` })
                 break;
             case(VideoEvent.PAUSE):
-                socketVideoEventHappened.pause = true
+                algorithmicVideoEventHappened.pause = true
                 vidElem.pause()
                 addNotif({ headerMsg: 'Pause Video', type: 'NOTIF', bodyMsg:  `User ${videoEventData.triggeringUser.userName} paused video.` })
                 break;
             case(VideoEvent.SPEED):
-                socketVideoEventHappened.speed = true
+                algorithmicVideoEventHappened.speed = true
                 vidElem.playbackRate = videoEventData.videoData.speed
                 addNotif({ headerMsg: 'Change Video Speed', type: 'NOTIF', bodyMsg:  `User ${videoEventData.triggeringUser.userName} changed video speed to ${videoEventData.videoData.speed}.` })
                 break;
             case(VideoEvent.SEEK):
-                socketVideoEventHappened.seek = true
+                algorithmicVideoEventHappened.seek = true
                 vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec 
                 
                 // https://stackoverflow.com/questions/1322732/convert-seconds-to-hh-mm-ss-with-javascript
                 let timeSeekedReadable = new Date(videoEventData.videoData.playbackTime * 1000).toISOString().substr(11, 8)
                 if (videoEventData.videoData.playing && vidElem.paused) {
-                    socketVideoEventHappened.play = true
+                    algorithmicVideoEventHappened.play = true
                     vidElem.play()
                 }
                 addNotif({ headerMsg: 'Seek Video', type: 'NOTIF', bodyMsg:  `User ${videoEventData.triggeringUser.userName} seeked video to ${timeSeekedReadable}.` })
@@ -297,7 +303,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
         sendResponse({
             status: Messages.SUCCESS,
-            payload: {room: currentRoom, chatOpen: chatOpen}
+            payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: offsetTime}
         } as ResponseObject<ToPopupRoomPayload>)
         return true
     } else if (request.message === Messages.TOFG_DO_YOU_EXIST) {
@@ -318,6 +324,14 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_CHAT_TOGGLE) {
         chatOpen = request.payload
         toggleChatComponentContainerInView(request.payload)
+    } else if (request.message === Messages.TOFG_SET_OFFSET) {
+        let payload = <ToFgOffsetPayload>request.payload
+        offsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
+
+        algorithmicVideoEventHappened.seek = true
+        vidElem.currentTime = vidElem.currentTime+offsetTime
+
+        return true
     }
 });
 

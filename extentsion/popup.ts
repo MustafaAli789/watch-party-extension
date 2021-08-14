@@ -1,5 +1,5 @@
 import { Messages, Page } from './models/constants'
-import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToPopupRoomPayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { PageMetadata } from './models/pagemetadata';
 
@@ -22,11 +22,16 @@ const leaveRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelecto
 const copyImgBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#mainPage .roomIdContainer .copyImgBtn");
 const syncBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .syncBtn")
 const chatToggleBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .chatToggle")
+const posOffsetBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("posOffsetBtn")
+const negOffsetBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("negOffsetBtn")
+const resetOffsetBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("resetOffsetBtn")
+
 
 
 //Inputs
 const nameInput: HTMLInputElement = <HTMLInputElement>document.querySelector("#startPage .addItemContainer .nameInput");
 const roomNameInput: HTMLInputElement = <HTMLInputElement>document.querySelector("#startPage .addItemContainer .roomInput");
+const offsetInput: HTMLInputElement = <HTMLInputElement>document.querySelector("#mainPage .offsetContainer .html-duration-picker")
 
 //Text
 const errorMsgElem: HTMLParagraphElement = document.querySelector("#startPage .addItemContainer .error");
@@ -54,6 +59,7 @@ chrome.tabs.query({active:true, currentWindow: true}, tabs => {
                 updateMainUsers(resp.payload.room.users)
                 setChatOpenToggle(chatToggled)
                 changePage(pageMetadata)
+                setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
             }) 
         }
     })
@@ -149,6 +155,55 @@ copyImgBtn.addEventListener('click', () => {
     })
 })
 
+posOffsetBtn.addEventListener('click', () => {
+    setOffset("UP")
+})
+
+negOffsetBtn.addEventListener('click', () => {
+    setOffset("DOWN")
+})
+
+resetOffsetBtn.addEventListener('click', () => {
+    if (offsetInput.value !== "00:00:00") {
+        offsetInput.value = "00:00:00"
+        setOffset(null)
+    }
+})
+
+const setOffset = (direction: "UP" | "DOWN") => {
+    let time = offsetInput.value.split(":")
+    let hours = parseInt(time[0])
+    let mins = parseInt(time[1])
+    let secs = parseInt(time[2])
+
+    let offsetTime = hours*3600 + mins*60 + secs
+
+    // setting button styles
+    posOffsetBtn.classList.remove('toggledBtn')
+    negOffsetBtn.classList.remove('toggledBtn')
+    if (direction === "UP") {
+        posOffsetBtn.classList.add('toggledBtn')
+    } else if(direction === "DOWN") {
+        negOffsetBtn.classList.add('toggledBtn')
+    }
+
+    if ((offsetTime > 0 && direction !== null) || (!direction && offsetTime === 0)) {
+        chrome.tabs.query({active:true, currentWindow: true}, tabs => {
+            let activeTabId = tabs[0].id
+            chrome.tabs.sendMessage(activeTabId, {
+                message: Messages.TOFG_IS_CHANNEL_OPEN
+            } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+                if (resp.status == Messages.SUCCESS && resp.payload) {
+                    chrome.tabs.sendMessage(activeTabId, {
+                        message: Messages.TOFG_SET_OFFSET,
+                        payload: { offsetTime: offsetTime, direction: direction }
+                    } as MessageObject<ToFgOffsetPayload>)
+                }
+            })
+        })
+    }
+}
+
 const joinRoomWithValidation = () => {
     let messageObject: MessageObject<ToFgJoinRoomPayload> = { 
         message: Messages.TOFG_JOIN_ROOM_IN_TAB, 
@@ -181,6 +236,7 @@ const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
                         updateMainUsers(resp.payload.room.users)
                         setChatOpenToggle(resp.payload.chatOpen)
+                        setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
                     }
                 })
             }
@@ -235,6 +291,24 @@ const setChatOpenToggle = (chatOpen: Boolean) => {
     } else {
         chatToggleBtn.classList.remove('toggledBtn')
     }
+}
+
+const setOffsetInput = (offsetTime: number, videoLength: number) => {
+
+    if (offsetTime > 0) {
+        posOffsetBtn.classList.add('toggledBtn')
+    } else if (offsetTime < 0) {
+        negOffsetBtn.classList.add('toggledBtn')
+    }
+
+    offsetTime < 0 ? offsetTime*=-1 : null
+
+    // https://stackoverflow.com/questions/1322732/convert-seconds-to-hh-mm-ss-with-javascript
+    let maxTime = new Date(videoLength * 1000).toISOString().substr(11, 8)
+    let curTime = new Date(offsetTime * 1000).toISOString().substr(11, 8)
+    offsetInput.setAttribute("data-duration-max", maxTime)
+    offsetInput.setAttribute("data-duration-min", "00:00:00")
+    offsetInput.value = curTime
 }
 
 // Message handler

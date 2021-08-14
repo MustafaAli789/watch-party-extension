@@ -1,61 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700,900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/popup.css">
-    <title>Popout</title>
-</head>
-<body>
-    <div id="header">
-        <div class="head">
-            <img class="logoImg" src="../images/icon-128x128.png">
-            <h1><span class="whiteSpan">Watch</span> Party</h1>
-        </div>
-        <div class="header_divider_container">
-            <div class="header_divider orange"></div>
-            <div class="header_divider red" style="margin: 0 10px;"></div>
-            <div class="header_divider blue"></div>
-        </div>
-    </div>
-
-    <div id="startPage">
-        <div class="addItemContainer">
-            <input class="roomInput" maxlength="25" type="text" name="roomInput" placeholder="Enter room name or id!">
-            <input class="nameInput" maxlength="40" type="text" name="nameInput" placeholder="Enter your name!">
-            <p class="error hidden"></p>
-            <button class="newRoomBtn green styledButton">New Room</button>
-            <button class="joinRoomBtn orange2 styledButton">Join Room</button>
-        </div>
-    </div>
-
-    <div id="mainPage">
-        <div class="head" style="padding: 5px;">
-            <img class="logoImg2" src="../images/icon-128x128.png">
-            <h1>Room <span class="roomName whiteSpan"></span></h1>
-        </div>
-        <div class="roomIdContainer">
-            <h3>RoomCode: <span class="roomId" tabindex="0"></span></h3>
-            <img class="copyImgBtn" src="../images/copy.png" title="Copy to clipboard">
-        </div>
-        <div class="users">
-            <h3>Users in Room</h3>
-            <div class="usersList">
-
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css?family=Roboto:400,700,900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="../css/popup.css">
+        <title>Popout</title>
+    </head>
+    <body>
+        <div id="header">
+            <div class="head">
+                <img class="logoImg" src="../images/icon-128x128.png">
+                <h1><span class="whiteSpan">Watch</span> Party</h1>
+            </div>
+            <div class="header_divider_container">
+                <div class="header_divider orange"></div>
+                <div class="header_divider red" style="margin: 0 10px;"></div>
+                <div class="header_divider blue"></div>
             </div>
         </div>
-        <div class="actions">
-            <h3>Actions</h3>
-            <div class="actionBtns">
-                <button class="syncBtn" title="Sync Video To Group">Sync</button>
-                <button class="chatToggle">Toggle Chat</button>
+
+        <div id="startPage">
+            <div class="addItemContainer">
+                <input class="roomInput" maxlength="25" type="text" name="roomInput" placeholder="Enter room name or id!">
+                <input class="nameInput" maxlength="40" type="text" name="nameInput" placeholder="Enter your name!">
+                <p class="error hidden"></p>
+                <button class="newRoomBtn green styledButton">New Room</button>
+                <button class="joinRoomBtn orange2 styledButton">Join Room</button>
             </div>
         </div>
-        <button class="blue styledButton backBtn">Leave Room</button>
-    </div>
 
-</body>
-<script src="../popup.js"></script>
+        <div id="mainPage">
+            <div class="head" style="padding: 5px;">
+                <img class="logoImg2" src="../images/icon-128x128.png">
+                <h1>Room <span class="roomName whiteSpan"></span></h1>
+            </div>
+            <div class="roomIdContainer">
+                <h3>RoomCode: <span class="roomId" tabindex="0"></span></h3>
+                <img class="copyImgBtn" src="../images/copy.png" title="Copy to clipboard">
+            </div>
+            <div class="users">
+                <h3>Users in Room</h3>
+                <div class="usersList" style="max-height: 250px; overflow-y: auto;">
+
+                </div>
+            </div>
+            <div class="actions">
+                <h3>Actions</h3>
+                <div class="actionBtns">
+                    <button class="syncBtn" title="Sync Video To Group">Sync</button>
+                    <button class="chatToggle">Toggle Chat</button>
+                </div>
+            </div>
+            <div class="offsetContainer">
+                <h3>Offset Picker</h3>
+                <div style="display: flex;">
+                    <input class="html-duration-picker">
+                    <div style="display: flex; justify-content: space-evenly; flex-grow: 1;">
+                        <button id="posOffsetBtn" title="Set positive offset to admin">▲</button>
+                        <button id="negOffsetBtn" title="Set negative offset to admin">▼</button>
+                        <button id="resetOffsetBtn" title="Reset">↺</button>
+                    </div>
+                </div>
+            </div>
+            <button class="blue styledButton backBtn">Leave Room</button>
+        </div>
+        <script src="../durationpicker/html-duration-picker.min.js"></script>
+    </body>
+    <script src="../popup.js"></script>
 </html>

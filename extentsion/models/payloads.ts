@@ -7,10 +7,17 @@ export interface ToFgNewRoomPayload {
 }
 export interface ToPopupRoomPayload {
     room: Room,
-    chatOpen: Boolean
+    chatOpen: Boolean,
+    videoLength: number,
+    offsetTime: number
 }
 
 export interface ToFgJoinRoomPayload {
     userName: string,
     roomId: string
+}
+
+export interface ToFgOffsetPayload {
+    offsetTime: number,
+    direction: "UP" | "DOWN"
 }

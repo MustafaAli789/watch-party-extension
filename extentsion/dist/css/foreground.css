@@ -28,14 +28,12 @@
     color:#000;
     text-decoration:none;
     position:relative;
+    right: 1px;
 }
 #chatContainer {
 	position: fixed;
     top:100px;
     right: -1px;
-}
-.removeFromView {
-    display: none;
 }
 
 #sliderContainer{
@@ -87,6 +85,8 @@
 .rightInnerContainer{
     justify-content: flex-end;
     margin-right: 5%;
+    margin-left: 10px;
+    flex: 0;
 }
 
 .roomCircle {
@@ -164,7 +164,7 @@
 
 /* Input container */
 .mainInputContainer{
-    height: 5rem;
+    height: 75px;
     display: flex;
     position: absolute;
     bottom: 0;
@@ -207,4 +207,41 @@
     font-weight: bold;
     height: 100%;
     width: 100%;
+}
+.imageContainer{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.imageChatMessage{
+    position: relative;
+    height: 50%;
+    width: 50%;
+    border-radius: 10px;
+}
+
+.removeImageButton{
+    position: absolute;
+    top: 10%;
+    left: 90%;
+    height: 20px;
+    width: 20px;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    background: none;
+    border:none;
+    font-weight: bold;
+    background-color: lightpink;
+    border-radius: 50%;
+    color: darkslategrey;
+}
+
+.imageChatMessage img {
+    width: 100%;
+}
+
+.removeFromView {
+    display: none;
 }

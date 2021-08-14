@@ -139,7 +139,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             toggleChatComponentContainerInView(true)
             createChatComponent(currentRoom.roomName, socket, getCurUser(currentRoom))
 
-            let initWelcomeMsg: Message = { user: null, content: `${getCurUser(currentRoom).userName}, welcome to room ${currentRoom.roomName}`, timestamp: getHourAndMinFormatted() }
+            let initWelcomeMsg: Message = { user: null, type: "MSG", content: `${getCurUser(currentRoom).userName}, welcome to room ${currentRoom.roomName}`, timestamp: getHourAndMinFormatted() }
 
             updateChat([...currentRoom.messages,initWelcomeMsg], getCurUser(currentRoom))
         } else if(currentRoom.users !== data.room.users) {
@@ -161,7 +161,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             addNotif({ headerMsg: 'User Left', type: 'SPECIAL', bodyMsg:  `User ${data.changedUser.userName} left room.` })
         }
 
-        let userChangeMsg: Message = { user: null, content: userChangeMsgContent, timestamp: getHourAndMinFormatted() }
+        let userChangeMsg: Message = { user: null, type: "MSG", content: userChangeMsgContent, timestamp: getHourAndMinFormatted() }
         updateChat([userChangeMsg], getCurUser(currentRoom))
     })
 

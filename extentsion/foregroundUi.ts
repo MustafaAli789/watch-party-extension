@@ -20,6 +20,8 @@ var chatContainer = document.createElement('DIV')
 chatContainer.id = "chatContainer"
 chatContainer.classList.add('removeFromView')
 chatContainer.style.zIndex = "9999999999999"
+var msgContentType: "IMG" | "MSG" = "MSG"
+var msgContent: string = ""
 document.querySelector('body').appendChild(chatContainer)
 
 export const addNotif = (data: { headerMsg: string, bodyMsg: string, type: 'ERROR' | 'NOTIF' | 'SUCCESS' | 'SPECIAL' }) => {
@@ -62,7 +64,7 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         <div class="infoBar">
             <div class="leftInnerContainer">
                 <div class="roomCircle"></div>
-                <h1 id="roomName">${roomName}</h1>
+                <h1 id="roomName" style="font-size:25px; word-break: break-all;">${roomName}</h1>
             </div>
             <div class="rightInnerContainer">
                 <a href="/">X</a>
@@ -72,8 +74,14 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         <div class="mainInputContainer">
             <div class="inputField">
                 <form class="form">
-                    <input class="input" type="text" placeholder="Type a message...">
+                    <input id="watchPartyChatInput" class="input" type="text" placeholder="Type a message...">
                 </form>
+                <div id="imgContainer" class="removeFromView">
+                    <div class="imageChatMessage">
+                        <img src="" />
+                        <button class="removeImageButton">X</button>
+                    </div>
+                </div>
             </div>
             <div class="buttonsContainer">
                 <button class="sendButton">Send</button>
@@ -97,15 +105,18 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
 
     let input: HTMLInputElement = document.querySelector('.input')
     input.addEventListener('keydown', (key: KeyboardEvent) => {
-        if (key.code === 'Enter' && input.value.trim().length > 0) {
-            sendMsg(socket, curUser, input.value)
+        if (key.code === 'Enter' && msgContent.length > 0) {
+            sendMsg(socket, curUser)
             input.value = ""
+        } else {
+            msgContent = input.value
         }
     })
     document.querySelector('.sendButton').addEventListener('click', () => {
-        if (input.value.trim().length > 0) {
-            sendMsg(socket, curUser, input.value)
+        if (msgContent.length > 0 || msgContentType === "IMG") {
+            sendMsg(socket, curUser)
             input.value = ""
+            removeChatImageInInput()
         }
     })
 
@@ -113,10 +124,64 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         e.preventDefault()
     })
 
+    document.querySelector(".removeImageButton").addEventListener('click', () => {
+        removeChatImageInInput()
+    })
+
+    // https://stackoverflow.com/questions/6333814/how-does-the-paste-image-from-clipboard-functionality-work-in-gmail-and-google-c
+    document.onpaste = function (event) {
+        if (document.activeElement.id !== "watchPartyChatInput") return
+        
+        var items = (event.clipboardData).items;
+        console.log(JSON.stringify(items)); // might give you mime types
+        let lastItem = items[items.length-1]
+        if (lastItem.kind === 'file' && lastItem.type === "image/png") {
+            var blob = lastItem.getAsFile();
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                showChatImageInInput(event.target.result.toString())
+            }; 
+            reader.readAsDataURL(blob);
+        } else {
+            msgContent = event.clipboardData.getData('text')
+        }
+    };
+
 }
 
-const sendMsg = (socket: Socket, curUser: User, content: string) => {
-    let msg: Message = { user: curUser, content: content, timestamp: getHourAndMinFormatted() }
+const showChatImageInInput = (imgSrc: string) => {
+    let imgContainer: HTMLDivElement = document.querySelector("#imgContainer")
+
+    if (msgContentType === "MSG") {
+        msgContentType = "IMG"
+        imgContainer.classList.remove('imageContainer')
+        imgContainer.classList.remove('removeFromView')
+        imgContainer.classList.add('imageContainer')
+        document.querySelector(".form").classList.add('removeFromView')
+    }
+
+    imgContainer.querySelector("img").src = imgSrc
+    msgContent = imgSrc
+}
+
+const removeChatImageInInput = () => {
+    msgContentType = "MSG"
+
+    let imgContainer: HTMLDivElement = document.querySelector("#imgContainer")
+
+    imgContainer.classList.remove('imageContainer')
+    imgContainer.classList.remove('removeFromView')
+    imgContainer.classList.add('imageContainer')
+    imgContainer.classList.add('removeFromView')
+
+    document.querySelector(".form").classList.remove('removeFromView')
+
+    imgContainer.querySelector("img").src = ""
+    msgContent = ""
+}
+
+const sendMsg = (socket: Socket, curUser: User) => {
+    let msg: Message = { user: curUser, type: msgContentType, content: msgContent, timestamp: getHourAndMinFormatted() }
     socket.emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
     updateChat([msg], curUser)
 }
@@ -172,6 +237,14 @@ export const updateChat = (messages: Message[], curUser: User) => {
 
     let messagesContainer: HTMLDivElement = document.querySelector('.messages')
     messages.forEach(msg => {
+
+        let msgContentElem: string = ""
+        if (msg.type === "IMG") {
+            msgContentElem = `<img src="${msg.content}" style="width: 100%; height:100%; border-radius:20px">`
+        } else {
+            msgContentElem = `<p class="messageText" style="color: ${curUser.userId === msg.user?.userId ? 'white' : '#353535'};">${msg.content}</p>`
+        }
+
         if (curUser.userId === msg.user?.userId) { //cur user msg
             messagesContainer.innerHTML += ` 
                 <div class="message" style="margin-top: 1rem;">
@@ -185,7 +258,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
                         <div class="row">
                             <div class="col-11 d-flex align-items-end justify-content-end" style="padding-right: 0;">
                                 <div class='messageBox backgroundBlue'>
-                                    <p class="messageText" style="color: white;">${msg.content}</p>
+                                    ${msgContentElem}
                                 </div> 
                             </div>
                             <div class="col-1 d-flex align-items-end justify-content-center" style="padding:0;">
@@ -214,7 +287,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
                             </div>
                             <div class="col-11 d-flex align-items-end" style="padding-left: 0;">
                                 <div class="messageBox ${bgColor}">
-                                    <p class="messageText" style="color: #353535;">${msg.content}</p>
+                                    ${msgContentElem}
                                 </div>
                             </div>
                         </div>

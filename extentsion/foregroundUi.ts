@@ -108,14 +108,17 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         if (key.code === 'Enter' && msgContent.length > 0) {
             sendMsg(socket, curUser)
             input.value = ""
-        } else {
-            msgContent = input.value
+            msgContent = ""
         }
+    })
+    input.addEventListener('input', e => {
+        msgContent = input.value
     })
     document.querySelector('.sendButton').addEventListener('click', () => {
         if (msgContent.length > 0 || msgContentType === "IMG") {
             sendMsg(socket, curUser)
             input.value = ""
+            msgContent = ""
             removeChatImageInInput()
         }
     })

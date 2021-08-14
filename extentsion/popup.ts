@@ -14,6 +14,7 @@ const startPage: HTMLDivElement = document.querySelector("#startPage");
 const mainPage: HTMLDivElement = document.querySelector("#mainPage");
 const header: HTMLDivElement = document.querySelector("#header");
 const usersListContainer: HTMLDivElement = document.querySelector("#mainPage .users .usersList");
+const offsetContainer: HTMLDivElement = document.querySelector("#mainPage .offsetContainer")
 
 //Bttons
 const newRoomBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector("#startPage .addItemContainer .newRoomBtn");
@@ -59,7 +60,11 @@ chrome.tabs.query({active:true, currentWindow: true}, tabs => {
                 updateMainUsers(resp.payload.room.users)
                 setChatOpenToggle(chatToggled)
                 changePage(pageMetadata)
-                setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
+                if (!resp.payload.room.users.find(user => user.current)?.admin) {
+                    setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
+                } else {
+                    offsetContainer.style.display = "none"
+                }
             }) 
         }
     })
@@ -236,7 +241,12 @@ const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
                         updateMainUsers(resp.payload.room.users)
                         setChatOpenToggle(resp.payload.chatOpen)
-                        setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
+
+                        if (!resp.payload.room.users.find(user => user.current)?.admin) {
+                            setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
+                        } else {
+                            offsetContainer.style.display = "none"
+                        }
                     }
                 })
             }

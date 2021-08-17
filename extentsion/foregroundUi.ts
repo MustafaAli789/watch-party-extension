@@ -2,6 +2,8 @@ import { Socket } from "socket.io-client"
 import { SocketEvents } from "../sharedmodels/constants"
 import { Message } from "../sharedmodels/message"
 import { User } from "../sharedmodels/user"
+import { Messages } from "./models/constants"
+import { MessageObject } from "./models/messagepassing"
 
 const getHourAndMinFormatted = (): string => {
     let curDate: Date = new Date()
@@ -115,7 +117,7 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         msgContent = input.value
     })
     document.querySelector('.sendButton').addEventListener('click', () => {
-        if (msgContent.length > 0 || msgContentType === "IMG") {
+        if (msgContent.length > 0) {
             sendMsg(socket, curUser)
             input.value = ""
             msgContent = ""
@@ -154,6 +156,7 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
 
 const showChatImageInInput = (imgSrc: string) => {
     let imgContainer: HTMLDivElement = document.querySelector("#imgContainer")
+    msgContent = ""
 
     if (msgContentType === "MSG") {
         msgContentType = "IMG"
@@ -164,8 +167,32 @@ const showChatImageInInput = (imgSrc: string) => {
     }
 
     imgContainer.querySelector("img").src = imgSrc
-    msgContent = imgSrc
+    minifyImg(imgSrc, 1080, null, (newUrl: string) => {
+        msgContent = newUrl
+    })
 }
+
+//https://stackoverflow.com/questions/14672746/how-to-compress-an-image-via-javascript-in-the-browser
+var minifyImg = function(dataUrl,newWidth,imageType="image/jpeg",resolve,imageArguments=0.7){
+    var image, oldWidth, oldHeight, newHeight, canvas, ctx, newDataUrl;
+    image = new Image(); 
+    image.src = dataUrl;
+    image.onload = () => {
+        oldWidth = image.width; oldHeight = image.height;
+        if (oldWidth <= newWidth) {
+            resolve(dataUrl);
+        } else {
+            newHeight = Math.floor(oldHeight / oldWidth * newWidth)
+
+            canvas = document.createElement("canvas");
+            canvas.width = newWidth; canvas.height = newHeight;
+            ctx = canvas.getContext("2d");
+            ctx.drawImage(image, 0, 0, newWidth, newHeight);
+            newDataUrl = canvas.toDataURL(imageType, imageArguments);
+            resolve(newDataUrl);
+        }
+    }
+  };
 
 const removeChatImageInInput = () => {
     msgContentType = "MSG"
@@ -243,7 +270,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
 
         let msgContentElem: string = ""
         if (msg.type === "IMG") {
-            msgContentElem = `<img src="${msg.content}" style="width: 100%; height:100%; border-radius:20px">`
+            msgContentElem = `<img src="${msg.content}" style="width: 100%; height:100%; border-radius:20px; cursor: pointer">`
         } else {
             msgContentElem = `<p class="messageText" style="color: ${curUser.userId === msg.user?.userId ? 'white' : '#353535'};">${msg.content}</p>`
         }
@@ -297,6 +324,17 @@ export const updateChat = (messages: Message[], curUser: User) => {
                     </div>
                 </div>
             `
+        }
+
+        if (msg.type === "IMG") {
+            let allImages: NodeListOf<HTMLImageElement> = document.querySelectorAll(".messages img")
+            let lastImg: HTMLImageElement = allImages[allImages.length-1]
+            lastImg.addEventListener('click', () => {
+                chrome.runtime.sendMessage({
+                    message: Messages.TOBG_OPEN_IMG_IN_TAB,
+                    payload: lastImg.src
+                } as MessageObject<string>)
+            })
         }
     })
     messagesContainer.scrollTop = messagesContainer.scrollHeight

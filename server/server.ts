@@ -105,7 +105,7 @@ io.on(SocketEvents.SERVER_CONNECTION, (socket) => {
   socket.on(SocketEvents.TO_SERVER_TO_EXT_CHAT, (msg: Message) => {
     let user: User = getUserFromId(socket.id)
     getRoomFromUserId(user.userId).messages.push(msg)
-    socket.to(getUserFromId(socket.id)?.roomId).emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
+    socket.to(user.roomId).emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
   })
 
   socket.on(SocketEvents.TO_SERVER_SET_OFFSET, (offset: ToServerOffsetTimePayload) => {

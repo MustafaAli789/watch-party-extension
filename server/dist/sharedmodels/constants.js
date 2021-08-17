@@ -12,7 +12,8 @@ exports.SocketEvents = {
     TO_EXT_RECIEVE_ROOM_DATA: 'recieve_room_data',
     TO_SERVER_TO_EXT_VIDEO_EVENT: 'video_event',
     TO_SERVER_TO_EXT_SYNC_VIDEO: 'sync_video',
-    TO_SERVER_TO_EXT_CHAT: 'send_chat_message'
+    TO_SERVER_TO_EXT_CHAT: 'send_chat_message',
+    TO_SERVER_SET_OFFSET: 'set_offset'
 };
 var RoomAction;
 (function (RoomAction) {

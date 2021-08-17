@@ -4,5 +4,6 @@ export interface User {
     userId: string,
     roomId: string
     current?: Boolean,
-    admin: Boolean
+    admin: Boolean,
+    offsetTime: number,
 }

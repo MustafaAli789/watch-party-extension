@@ -3,7 +3,7 @@ import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoom
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 
 import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
-import {  ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload } from '../sharedmodels/payloads'
+import {  ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload } from '../sharedmodels/payloads'
 import { VideoData } from '../sharedmodels/videoData';
 
 import { Socket, io } from 'socket.io-client'; 
@@ -24,7 +24,6 @@ var algorithmicVideoEventHappened = {
 }
 var currentRoom: Room = null
 var chatOpen: Boolean = false
-var offsetTime: number = 0
 
 var isSeeking = false;
 var seekedTimeout;
@@ -139,7 +138,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
             sendResponse({
                 status: Messages.SUCCESS,
-                payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: offsetTime}
+                payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: 0}
             } as ResponseObject<ToPopupRoomPayload>)
 
             toggleChatComponentContainerInView(true)
@@ -149,10 +148,16 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
             updateChat([...currentRoom.messages,initWelcomeMsg], getCurUser(currentRoom))
         } else if(currentRoom.users !== data.room.users) {
+            //if u are now the room admin but before werent
+            if (data.room.users.find(user => user.admin)?.current && !currentRoom.users.find(user => user.admin)?.current) {
+                addNotif({ headerMsg: 'Admin Assignment', bodyMsg: "You are now the new room admin.", type: 'SPECIAL' })
+            }
+
             currentRoom = data.room
+
             chrome.runtime.sendMessage({
                 message: Messages.TOPOPUP_ROOM_DATA,
-                payload: {room: currentRoom}
+                payload: {room: currentRoom, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom).offsetTime}
             } as MessageObject<ToPopupRoomPayload>)
         }
     })
@@ -192,18 +197,29 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
     socket.on(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, (videoEventData: ToExtVideoEventPayload) => {
         let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
+        let newVidTime
         switch(videoEventData.videoEvent) {
             case(VideoEvent.SYNC):
             case(VideoEvent.JOIN):
-                if(!!videoEventData.error) { // i.e admin is currently buffering
+                //ex: name in use or user being synces to is buffering
+                if(!!videoEventData.error) { 
                     if (videoEventData.videoEvent === VideoEvent.JOIN) {
                         socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
                     }
-                    alert(videoEventData.error)
+                    addNotif({ headerMsg: 'Error', type: 'ERROR', bodyMsg: videoEventData.error })
                     return
                 }
                 algorithmicVideoEventHappened.seek = true
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec + offsetTime
+
+                //need to account for differences in offsets
+                newVidTime = videoEventData.videoData.playbackTime + (getCurUser(currentRoom).offsetTime - videoEventData.triggeringUser.offsetTime)
+
+                //if video was playing and someone seeks, then account for that little time it takes to recieve req and their vid playing during that time
+                if (!vidElem.paused) {
+                    newVidTime += elapsedTimeSinceRequestSec*vidElem.playbackRate
+                }
+
+                vidElem.currentTime = newVidTime
                 
                 if (videoEventData.videoData.playing && vidElem.paused) {
                     algorithmicVideoEventHappened.play = true
@@ -218,7 +234,6 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                     vidElem.playbackRate = videoEventData.videoData.speed
                 }
                 
-
                 if (videoEventData.videoEvent === VideoEvent.SYNC) {
                     if (videoEventData.triggeringUser.admin) {
                         addNotif({ headerMsg: 'Synced to admin', type: 'SUCCESS', bodyMsg: 'Successfuly synced to admin' })
@@ -245,10 +260,19 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 break;
             case(VideoEvent.SEEK):
                 algorithmicVideoEventHappened.seek = true
-                vidElem.currentTime = videoEventData.videoData.playbackTime + elapsedTimeSinceRequestSec 
+
+                //need to account for differences in offsets
+                newVidTime = videoEventData.videoData.playbackTime + (getCurUser(currentRoom).offsetTime - videoEventData.triggeringUser.offsetTime)
+
+                //if video was playing and someone seeks, then account for that little time it takes to recieve req and their vid playing during that time
+                if (!vidElem.paused) {
+                    newVidTime += elapsedTimeSinceRequestSec*vidElem.playbackRate
+                }
+
+                vidElem.currentTime = newVidTime
                 
                 // https://stackoverflow.com/questions/1322732/convert-seconds-to-hh-mm-ss-with-javascript
-                let timeSeekedReadable = new Date(videoEventData.videoData.playbackTime * 1000).toISOString().substr(11, 8)
+                let timeSeekedReadable = new Date(newVidTime * 1000).toISOString().substr(11, 8)
                 if (videoEventData.videoData.playing && vidElem.paused) {
                     algorithmicVideoEventHappened.play = true
                     vidElem.play()
@@ -303,7 +327,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
         sendResponse({
             status: Messages.SUCCESS,
-            payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: offsetTime}
+            payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom).offsetTime}
         } as ResponseObject<ToPopupRoomPayload>)
         return true
     } else if (request.message === Messages.TOFG_DO_YOU_EXIST) {
@@ -326,10 +350,16 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         toggleChatComponentContainerInView(request.payload)
     } else if (request.message === Messages.TOFG_SET_OFFSET) {
         let payload = <ToFgOffsetPayload>request.payload
-        offsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
+        let oldOffsetTime = getCurUser(currentRoom).offsetTime
+
+        let newOffsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
+        getCurUser(currentRoom).offsetTime = newOffsetTime
+
+        socket.emit(SocketEvents.TO_SERVER_SET_OFFSET, { offsetTime: newOffsetTime } as ToServerOffsetTimePayload)
+        addNotif({ headerMsg: 'Offset Time Set', bodyMsg: "Successfully set offset time to " + newOffsetTime, type: 'SUCCESS' })
 
         algorithmicVideoEventHappened.seek = true
-        vidElem.currentTime = vidElem.currentTime+offsetTime
+        vidElem.currentTime = vidElem.currentTime+newOffsetTime-oldOffsetTime //need the -oldOffsetTime to make sure it resets to normal sync with admin
 
         return true
     }

@@ -38,3 +38,7 @@ export interface ToExtSyncVideoPayload {
     userRequestingSync: User,
     userJoining: Boolean
 }
+
+export interface ToServerOffsetTimePayload {
+    offsetTime: number
+}

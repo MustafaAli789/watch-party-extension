@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId, getAdminUserFromRoom, getUserFromId } from './util'
 import { SocketEvents, RoomAction, UserChange } from '../sharedmodels/constants'
 
-import { ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload } from '../sharedmodels/payloads'
+import { ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload } from '../sharedmodels/payloads'
 import { Message } from '../sharedmodels/message';
 import { User } from '../sharedmodels/user';
 import { Room } from '../sharedmodels/room';
@@ -106,6 +106,11 @@ io.on(SocketEvents.SERVER_CONNECTION, (socket) => {
     let user: User = getUserFromId(socket.id)
     getRoomFromUserId(user.userId).messages.push(msg)
     socket.to(getUserFromId(socket.id)?.roomId).emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
+  })
+
+  socket.on(SocketEvents.TO_SERVER_SET_OFFSET, (offset: ToServerOffsetTimePayload) => {
+    let user: User = getUserFromId(socket.id)
+    user.offsetTime = offset.offsetTime
   })
 
   socket.on(SocketEvents.SERVER_DISCONNECT, () => {

@@ -10,12 +10,13 @@ function get_random_color() {
     return "#" + c() + c() + c();
 }
 class UserImpl {
-    constructor(userId, userName, roomId, admin) {
+    constructor(userId, userName, roomId, admin, offsetTime) {
         this.color = get_random_color();
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;
         this.admin = admin;
+        this.offsetTime = offsetTime;
     }
 }
 exports.UserImpl = UserImpl;
@@ -66,7 +67,7 @@ const addUserToRoom = (userId, userName, roomId, admin) => {
     if (existingRoom.users.find(user => user.userName.trim() === userName.trim())) {
         return { error: `User with username ${userName.trim()} already exists in room.`, user: null };
     }
-    const user = new UserImpl(userId, uName, roomId, admin);
+    const user = new UserImpl(userId, uName, roomId, admin, 0);
     existingRoom.addUser(user);
     return { user, error: null };
 };
@@ -82,7 +83,17 @@ const removeUser = (userId) => {
                 rooms.splice(i, 1);
             }
             else if (deletedUser.admin) {
-                rooms[i].users[Math.floor(Math.random() * rooms[i].users.length)].admin = true;
+                //setting random admin now
+                let newAdminRandomId = Math.floor(Math.random() * rooms[i].users.length);
+                let newAdminUser = rooms[i].users[newAdminRandomId];
+                newAdminUser.admin = true;
+                //updating all users offset
+                rooms[i].users.forEach(user => {
+                    if (user !== newAdminUser) {
+                        user.offsetTime = user.offsetTime - newAdminUser.offsetTime;
+                    }
+                });
+                newAdminUser.offsetTime = 0;
             }
             return { deletedUser, error: null };
         }

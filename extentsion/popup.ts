@@ -242,6 +242,7 @@ const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
                         updateMainUsers(resp.payload.room.users)
                         setChatOpenToggle(resp.payload.chatOpen)
 
+                        //cur user is not admin (admin doesnt see offset shenanigans)
                         if (!resp.payload.room.users.find(user => user.current)?.admin) {
                             setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
                         } else {
@@ -330,6 +331,13 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         if (sender.tab?.id === curActiveTabId && request.message === Messages.TOPOPUP_ROOM_DATA) {
             let reqData = <ToPopupRoomPayload>request.payload
             updateMainUsers(reqData.room.users)
+
+            //cur user is not admin (admin doesnt see offset shenanigans)
+            if (!reqData.room.users.find(user => user.current)?.admin) {
+                setOffsetInput(reqData.offsetTime, reqData.videoLength)
+            } else {
+                offsetContainer.style.display = "none"
+            }
         }
     })
     return true

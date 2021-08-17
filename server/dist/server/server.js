@@ -85,6 +85,10 @@ io.on(constants_1.SocketEvents.SERVER_CONNECTION, (socket) => {
         util_1.getRoomFromUserId(user.userId).messages.push(msg);
         socket.to((_a = util_1.getUserFromId(socket.id)) === null || _a === void 0 ? void 0 : _a.roomId).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_CHAT, msg);
     });
+    socket.on(constants_1.SocketEvents.TO_SERVER_SET_OFFSET, (offset) => {
+        let user = util_1.getUserFromId(socket.id);
+        user.offsetTime = offset.offsetTime;
+    });
     socket.on(constants_1.SocketEvents.SERVER_DISCONNECT, () => {
         if (!util_1.getUserFromId(socket.id)) {
             return;

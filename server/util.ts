@@ -18,11 +18,13 @@ export class UserImpl implements User {
     roomId: string;
     admin: Boolean;
     current?: Boolean;
-    constructor(userId: string, userName: string, roomId: string, admin: Boolean) {
+    offsetTime: number
+    constructor(userId: string, userName: string, roomId: string, admin: Boolean, offsetTime: number) {
         this.userId = userId;
         this.userName = userName;
         this.roomId = roomId;
         this.admin = admin;
+        this.offsetTime = offsetTime
     }
     
 }   
@@ -80,7 +82,7 @@ export const addUserToRoom = (userId: string, userName: string, roomId: string, 
         return {error:  `User with username ${userName.trim()} already exists in room.`, user: null}
     }
 
-    const user: User = new UserImpl(userId, uName, roomId, admin)
+    const user: User = new UserImpl(userId, uName, roomId, admin, 0)
     existingRoom.addUser(user)
 
     return { user, error: null }
@@ -97,7 +99,19 @@ export const removeUser = (userId: string): { deletedUser: User, error: String }
             if (rooms[i].users.length == 0) {
                 rooms.splice(i, 1)
             } else if(deletedUser.admin) { 
-                rooms[i].users[Math.floor(Math.random() * rooms[i].users.length)].admin = true
+                
+                //setting random admin now
+                let newAdminRandomId = Math.floor(Math.random() * rooms[i].users.length)
+                let newAdminUser = rooms[i].users[newAdminRandomId]
+                newAdminUser.admin = true
+
+                //updating all users offset
+                rooms[i].users.forEach(user => {
+                    if (user !== newAdminUser) {
+                        user.offsetTime = user.offsetTime - newAdminUser.offsetTime
+                    }
+                })
+                newAdminUser.offsetTime = 0
             }
 
             return { deletedUser, error: null }

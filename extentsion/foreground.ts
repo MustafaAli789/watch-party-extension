@@ -1,6 +1,7 @@
 import { Messages } from './models/constants'
 import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
+import { NotifDataInterface, NotifActionButtonInterface } from "./models/Miscellaneous"
 
 import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
 import {  ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload } from '../sharedmodels/payloads'
@@ -306,7 +307,18 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
                 status: Messages.SUCCESS,
                 payload: false
             } as ResponseObject<boolean>)
-            addNotif({ headerMsg: 'Video Missing Error', bodyMsg: "There must be a video on screen to create or join a room", type: 'ERROR' })
+            
+            let actionButtonData: NotifActionButtonInterface = null
+            let toastBodyData: NotifDataInterface = { headerMsg: 'Video Missing Error', bodyMsg: "There must be a video on screen to create or join a room", type: 'ERROR' }
+            if (document.querySelector('iframe')) {
+                actionButtonData = { buttonContent: "Visit Video Source", buttonAction: () => {
+                    chrome.runtime.sendMessage({
+                        message: Messages.TOBG_OPEN_TAB_WITH_URL,
+                        payload: document.querySelector('iframe').src
+                    } as MessageObject<string>)
+                }}
+            }
+            addNotif(toastBodyData, actionButtonData)
         }
 
         return true;

@@ -1,7 +1,7 @@
 import { Messages, Page } from './models/constants'
 import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
-import { PageMetadata } from './models/pagemetadata';
+import { PageMetadata } from './models/Miscellaneous';
 
 import { User } from '../sharedmodels/user'
 import {  } from '../sharedmodels/payloads'

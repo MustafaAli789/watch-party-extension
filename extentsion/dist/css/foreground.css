@@ -5,6 +5,16 @@
 .toast-body {
     background: white;
 }
+.notifActionBtn {
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.notifActionBtn:hover{
+    background-color: black;
+    color: white;
+}
 .toast-header{
     background-color: lightgrey;
     border-bottom: 1px solid black;

@@ -152,11 +152,12 @@ html, body {
 #mainPage .actions .actionBtns button {
     width: 49%;
     border: none;
+    background-color: white;
     border-radius: 3px;
     color: black;
     font-family: 'Roboto', sans-serif;
     font-weight: 400;
-    transition: background-color 1s;
+    transition: background-color 0.2s;
 }
 #mainPage .actions .actionBtns button:not(.disabledBtn):not(.toggledBtn):hover{
     cursor: pointer;
@@ -191,7 +192,7 @@ html, body {
     color: black;
     font-family: 'Roboto', sans-serif;
     font-weight: 400;
-    transition: background-color 1s;
+    transition: background-color 0.2s;
     background-color: white;
 }
 #mainPage .offsetContainer button:not(.toggledBtn):hover {
@@ -246,7 +247,7 @@ html, body {
     font-family: 'Roboto', sans-serif;
     font-weight: 900;
     font-size: 17px;
-    transition: background-color 1s;
+    transition: background-color 0.2s;
 }
 .hidden{
     display: none;

@@ -4,6 +4,7 @@ import { Message } from "../sharedmodels/message"
 import { User } from "../sharedmodels/user"
 import { Messages } from "./models/constants"
 import { MessageObject } from "./models/messagepassing"
+import { NotifDataInterface, NotifActionButtonInterface } from "./models/Miscellaneous"
 
 const getHourAndMinFormatted = (): string => {
     let curDate: Date = new Date()
@@ -26,10 +27,17 @@ var msgContentType: "IMG" | "MSG" = "MSG"
 var msgContent: string = ""
 document.querySelector('body').appendChild(chatContainer)
 
-export const addNotif = (data: { headerMsg: string, bodyMsg: string, type: 'ERROR' | 'NOTIF' | 'SUCCESS' | 'SPECIAL' }) => {
+export const addNotif = (data: NotifDataInterface, actionButtonData?: NotifActionButtonInterface) => {
     notifCount++
     let toast = document.createElement('DIV');
     toast.id = `toast${notifCount}`
+
+    let actionButtonContent = actionButtonData?.buttonContent
+    let actionButtonContainer = `
+        <div class="notifActionBtnContainer" style="display: flex; margin-top: 5px">
+            <button type="button" class="notifActionBtn" aria-label="${actionButtonContent}">${actionButtonContent}</button>
+        </div>
+    `
 
     let color = data.type === 'ERROR' ? 'red' : (data.type === 'NOTIF' ? 'blue' : (data.type === 'SPECIAL' ? 'purple' : 'green'))
     toast.innerHTML = `<div style="z-index: 9999" role="alert" aria-live="assertive" aria-atomic="true">
@@ -41,10 +49,17 @@ export const addNotif = (data: { headerMsg: string, bodyMsg: string, type: 'ERRO
             </div>
             <div class="toast-body" style="font-size: 15px;">
                 ${data.bodyMsg}
+                ${actionButtonData ? actionButtonContainer : ""}
             </div>
         </div>
     </div>`
     notifContainer.appendChild(toast)
+
+    if (actionButtonData) {
+        toast.querySelector('.notifActionBtnContainer').addEventListener('click', () => {
+            actionButtonData.buttonAction()
+        })
+    }
 
     let notifCloseTimeout = setTimeout(() => {
         removeNotif(toast.id)
@@ -331,7 +346,7 @@ export const updateChat = (messages: Message[], curUser: User) => {
             let lastImg: HTMLImageElement = allImages[allImages.length-1]
             lastImg.addEventListener('click', () => {
                 chrome.runtime.sendMessage({
-                    message: Messages.TOBG_OPEN_IMG_IN_TAB,
+                    message: Messages.TOBG_OPEN_TAB_WITH_URL,
                     payload: lastImg.src
                 } as MessageObject<string>)
             })

@@ -72,7 +72,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 // Message handler
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
-    if (request.message === Messages.TOBG_OPEN_IMG_IN_TAB) {
+    if (request.message === Messages.TOBG_OPEN_TAB_WITH_URL) {
         chrome.tabs.create({
             active:true,
             url: request.payload

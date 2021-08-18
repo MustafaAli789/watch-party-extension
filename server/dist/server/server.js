@@ -107,6 +107,7 @@ io.on(constants_1.SocketEvents.SERVER_CONNECTION, (socket) => {
         socket.disconnect();
     });
 });
+app.get('/', (req, res) => res.send('Hello World'));
 server.listen(3000, () => {
     console.log('listening on *:3000');
 });

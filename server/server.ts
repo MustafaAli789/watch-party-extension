@@ -137,6 +137,8 @@ io.on(SocketEvents.SERVER_CONNECTION, (socket) => {
   })
 });
 
+app.get('/',(req, res) => res.send('Hello World'));
+
 server.listen(3000, () => {
   console.log('listening on *:3000');
 });

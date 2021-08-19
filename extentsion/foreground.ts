@@ -63,6 +63,10 @@ const establishSocketConnectionForExistingRoom = (joinRoomData: ToFgJoinRoomPayl
 
 const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse) => {
 
+    vidElem.loop = false
+    vidElem.autoplay = false
+    vidElem.fastSeek
+
     vidElem.onplay = function() {
         if (algorithmicVideoEventHappened.play) {
             algorithmicVideoEventHappened.play = false
@@ -78,6 +82,10 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
     vidElem.onpause = function() {
         if (algorithmicVideoEventHappened.pause) {
             algorithmicVideoEventHappened.pause = false
+            return
+        }
+        //if this guys at the end of a vid, we dont want the auto pause to trigger
+        if (vidElem.currentTime === vidElem.duration) {
             return
         }
         seekedTimeout = setTimeout(() => {
@@ -124,7 +132,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
     }
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
-    socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
+    socket = io('https://ec2-18-190-156-173.us-east-2.compute.amazonaws.com',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
     socket.emit(SocketEvents.TO_SERVER_JOIN, roomData, (err) => {
         socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
@@ -245,9 +253,14 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
                 break;
             case(VideoEvent.PLAY):
+                addNotif({ headerMsg: 'Play Video', type: 'NOTIF', bodyMsg:  `User ${videoEventData.triggeringUser.userName} played video.` })
+
+                //if ths guy recieves a play from someone while at end of video, we dont want to accidentaly restart video and send seek event 
+                if (vidElem.currentTime === vidElem.duration) {
+                    return
+                }
                 algorithmicVideoEventHappened.play = true
                 vidElem.play()
-                addNotif({ headerMsg: 'Play Video', type: 'NOTIF', bodyMsg:  `User ${videoEventData.triggeringUser.userName} played video.` })
                 break;
             case(VideoEvent.PAUSE):
                 algorithmicVideoEventHappened.pause = true

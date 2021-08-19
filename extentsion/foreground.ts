@@ -378,10 +378,11 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         let oldOffsetTime = getCurUser(currentRoom).offsetTime
 
         let newOffsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
+        let newOffsetTimeFormatted = new Date(newOffsetTime * 1000).toISOString().substr(11, 8)
         getCurUser(currentRoom).offsetTime = newOffsetTime
 
         socket.emit(SocketEvents.TO_SERVER_SET_OFFSET, { offsetTime: newOffsetTime } as ToServerOffsetTimePayload)
-        addNotif({ headerMsg: 'Offset Time Set', bodyMsg: "Successfully set offset time to " + newOffsetTime, type: 'SUCCESS' })
+        addNotif({ headerMsg: 'Offset Time Set', bodyMsg: "Successfully set offset time to " + newOffsetTimeFormatted, type: 'SUCCESS' })
 
         algorithmicVideoEventHappened.seek = true
         vidElem.currentTime = vidElem.currentTime+newOffsetTime-oldOffsetTime //need the -oldOffsetTime to make sure it resets to normal sync with admin

@@ -23,11 +23,9 @@
   },
   "options_page": "./html/options.html",
   "permissions": [
-      "storage",
       "activeTab",
       "scripting",
-      "tabs",
-      "notifications"
+      "tabs"
   ],
   "host_permissions": [
       "<all_urls>"

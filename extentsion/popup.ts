@@ -292,22 +292,6 @@ const updateMainUsers = (users: Array<User>) => {
     });
 }
 
-`<div style="
-height: 20px;
-margin-top: 5px;
-width: 100%;
-border: 1px solid black;
-position: relative;
-"><div style="
-height: 100%;
-width: 43%;
-background-color: #5bf35b;
-"></div><span style="
-position: absolute;
-top: 3px;
-left: 100px;
-">00:11:04/00:25:15</span></div>`
-
 const setChatOpenToggle = (chatOpen: Boolean) => {
     if (chatOpen) {
         chatToggleBtn.classList.add('toggledBtn')

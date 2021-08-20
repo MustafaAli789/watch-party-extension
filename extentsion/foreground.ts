@@ -30,6 +30,9 @@ var isSeeking = false;
 var seekedTimeout;
 var SEEKEVENT_TIMEOUT = 50;
 
+var currentTimeNegFromOffset = 0
+var currentTimeNegFromOffsetInterval;
+
 const getCurUser = (room: Room): User => {
     return room.users.find(user => user.current)
 }
@@ -70,6 +73,12 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
     vidElem.onplay = function() {
         if (algorithmicVideoEventHappened.play) {
             algorithmicVideoEventHappened.play = false
+            return
+        }
+        if (currentTimeNegFromOffset > 0) {
+            algorithmicVideoEventHappened.pause = true
+            vidElem.pause()
+            addNotif({ headerMsg: 'Error Playing', type: 'ERROR', bodyMsg:  `Your offset relative to admin is currently before the video has started. Please wait or reset offset.` })
             return
         }
         if (!isSeeking) {
@@ -307,6 +316,36 @@ const retrieveVideoData = (): VideoData => {
     }
 }
 
+// old vid time is time of vid before it was changed
+const manageCurrentTimeNegFromOffset = (oldVidTime: number) => {
+    resetNegTimeOffset()
+    let offsetTime = getCurUser(currentRoom).offsetTime
+
+    if ((oldVidTime+offsetTime)<0) {
+        currentTimeNegFromOffset = -(oldVidTime+offsetTime);
+
+        algorithmicVideoEventHappened.pause = true;
+
+        if (!vidElem.paused) {
+            vidElem.pause();
+            currentTimeNegFromOffsetInterval = setInterval(() => {
+                currentTimeNegFromOffset-=1
+                if (currentTimeNegFromOffset <= 0) {
+                    algorithmicVideoEventHappened.play = true;
+                    vidElem.play();
+                    clearInterval(currentTimeNegFromOffsetInterval)
+                }
+            }, 1000)
+        }
+        
+    }
+}
+
+const resetNegTimeOffset = () => {
+    clearInterval(currentTimeNegFromOffsetInterval)
+    currentTimeNegFromOffset = 0;
+}
+
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
     if (request.message === Messages.TOFG_VIDEO_ON_SCREEN) {
         vidElem = document.querySelector('video')
@@ -376,6 +415,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_SET_OFFSET) {
         let payload = <ToFgOffsetPayload>request.payload
         let oldOffsetTime = getCurUser(currentRoom).offsetTime
+        let oldVidTime = vidElem.currentTime
 
         let newOffsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
         let newOffsetTimeFormatted = new Date(newOffsetTime * 1000).toISOString().substr(11, 8)
@@ -386,6 +426,8 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
 
         algorithmicVideoEventHappened.seek = true
         vidElem.currentTime = vidElem.currentTime+newOffsetTime-oldOffsetTime //need the -oldOffsetTime to make sure it resets to normal sync with admin
+
+        manageCurrentTimeNegFromOffset(oldVidTime)
 
         return true
     }

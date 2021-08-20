@@ -83,9 +83,10 @@ const removeUser = (userId) => {
                 rooms.splice(i, 1);
             }
             else if (deletedUser.admin) {
-                //setting random admin now
-                let newAdminRandomId = Math.floor(Math.random() * rooms[i].users.length);
-                let newAdminUser = rooms[i].users[newAdminRandomId];
+                //setting new admin to one with smallest offset time
+                //forces all users offsets to be positive
+                rooms[i].users.sort((u1, u2) => u1.offsetTime - u2.offsetTime);
+                let newAdminUser = rooms[i].users[0];
                 newAdminUser.admin = true;
                 //updating all users offset
                 rooms[i].users.forEach(user => {

@@ -30,9 +30,6 @@ var isSeeking = false;
 var seekedTimeout;
 var SEEKEVENT_TIMEOUT = 50;
 
-var currentTimeNegFromOffset = 0
-var currentTimeNegFromOffsetInterval;
-
 const getCurUser = (room: Room): User => {
     return room.users.find(user => user.current)
 }
@@ -68,19 +65,13 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
     vidElem.loop = false
     vidElem.autoplay = false
-    vidElem.fastSeek
 
     vidElem.onplay = function() {
         if (algorithmicVideoEventHappened.play) {
             algorithmicVideoEventHappened.play = false
             return
         }
-        if (currentTimeNegFromOffset > 0) {
-            algorithmicVideoEventHappened.pause = true
-            vidElem.pause()
-            addNotif({ headerMsg: 'Error Playing', type: 'ERROR', bodyMsg:  `Your offset relative to admin is currently before the video has started. Please wait or reset offset.` })
-            return
-        }
+
         if (!isSeeking) {
             socket.emit(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, { 
                 videoEvent: VideoEvent.PLAY, 
@@ -141,7 +132,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
     }
 
     //https://stackoverflow.com/questions/44628363/socket-io-access-control-allow-origin-error
-    socket = io('https://ec2-18-190-156-173.us-east-2.compute.amazonaws.com',{ transports: ['websocket', 'polling', 'flashsocket'] });
+    socket = io('http://localhost:3000',{ transports: ['websocket', 'polling', 'flashsocket'] });
 
     socket.emit(SocketEvents.TO_SERVER_JOIN, roomData, (err) => {
         socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
@@ -295,7 +286,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 vidElem.currentTime = newVidTime
                 
                 // https://stackoverflow.com/questions/1322732/convert-seconds-to-hh-mm-ss-with-javascript
-                let timeSeekedReadable = new Date(newVidTime * 1000).toISOString().substr(11, 8)
+                let timeSeekedReadable = newVidTime > 0 ? new Date(newVidTime * 1000).toISOString().substr(11, 8) : "00:00:00"
                 if (videoEventData.videoData.playing && vidElem.paused) {
                     algorithmicVideoEventHappened.play = true
                     vidElem.play()
@@ -314,36 +305,6 @@ const retrieveVideoData = (): VideoData => {
         speed: vidElem.playbackRate,
         playbackTime: vidElem.currentTime
     }
-}
-
-// old vid time is time of vid before it was changed
-const manageCurrentTimeNegFromOffset = (oldVidTime: number) => {
-    resetNegTimeOffset()
-    let offsetTime = getCurUser(currentRoom).offsetTime
-
-    if ((oldVidTime+offsetTime)<0) {
-        currentTimeNegFromOffset = -(oldVidTime+offsetTime);
-
-        algorithmicVideoEventHappened.pause = true;
-
-        if (!vidElem.paused) {
-            vidElem.pause();
-            currentTimeNegFromOffsetInterval = setInterval(() => {
-                currentTimeNegFromOffset-=1
-                if (currentTimeNegFromOffset <= 0) {
-                    algorithmicVideoEventHappened.play = true;
-                    vidElem.play();
-                    clearInterval(currentTimeNegFromOffsetInterval)
-                }
-            }, 1000)
-        }
-        
-    }
-}
-
-const resetNegTimeOffset = () => {
-    clearInterval(currentTimeNegFromOffsetInterval)
-    currentTimeNegFromOffset = 0;
 }
 
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
@@ -415,7 +376,6 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
     } else if (request.message === Messages.TOFG_SET_OFFSET) {
         let payload = <ToFgOffsetPayload>request.payload
         let oldOffsetTime = getCurUser(currentRoom).offsetTime
-        let oldVidTime = vidElem.currentTime
 
         let newOffsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
         let newOffsetTimeFormatted = new Date(newOffsetTime * 1000).toISOString().substr(11, 8)
@@ -426,8 +386,6 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
 
         algorithmicVideoEventHappened.seek = true
         vidElem.currentTime = vidElem.currentTime+newOffsetTime-oldOffsetTime //need the -oldOffsetTime to make sure it resets to normal sync with admin
-
-        manageCurrentTimeNegFromOffset(oldVidTime)
 
         return true
     }

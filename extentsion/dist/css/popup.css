@@ -194,6 +194,7 @@ html, body {
     font-weight: 400;
     transition: background-color 0.2s;
     background-color: white;
+    width: 49%;
 }
 #mainPage .offsetContainer button:not(.toggledBtn):hover {
     cursor: pointer;

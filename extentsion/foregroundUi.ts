@@ -153,7 +153,6 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
         if (document.activeElement.id !== "watchPartyChatInput") return
         
         var items = (event.clipboardData).items;
-        console.log(JSON.stringify(items)); // might give you mime types
         let lastItem = items[items.length-1]
         if (lastItem.kind === 'file' && lastItem.type === "image/png") {
             var blob = lastItem.getAsFile();
@@ -182,30 +181,28 @@ const showChatImageInInput = (imgSrc: string) => {
     }
 
     imgContainer.querySelector("img").src = imgSrc
-    minifyImg(imgSrc, 1080, null, (newUrl: string) => {
+    minifyImg(imgSrc, 2000, "image/jpeg", (newUrl: string) => {
         msgContent = newUrl
     })
 }
 
 //https://stackoverflow.com/questions/14672746/how-to-compress-an-image-via-javascript-in-the-browser
-var minifyImg = function(dataUrl,newWidth,imageType="image/jpeg",resolve,imageArguments=0.7){
-    var image, oldWidth, oldHeight, newHeight, canvas, ctx, newDataUrl;
+var minifyImg = function(dataUrl,maxWidth,imageType="image/jpeg",resolve,imageArguments=0.9){
+    var image, oldWidth, oldHeight, newHeight, newWidth, canvas, ctx, newDataUrl;
     image = new Image(); 
     image.src = dataUrl;
     image.onload = () => {
         oldWidth = image.width; oldHeight = image.height;
-        if (oldWidth <= newWidth) {
-            resolve(dataUrl);
-        } else {
-            newHeight = Math.floor(oldHeight / oldWidth * newWidth)
 
-            canvas = document.createElement("canvas");
-            canvas.width = newWidth; canvas.height = newHeight;
-            ctx = canvas.getContext("2d");
-            ctx.drawImage(image, 0, 0, newWidth, newHeight);
-            newDataUrl = canvas.toDataURL(imageType, imageArguments);
-            resolve(newDataUrl);
-        }
+        newHeight = oldWidth <= maxWidth ? oldHeight : Math.floor(oldHeight / oldWidth * maxWidth)
+        newWidth = Math.min(oldWidth, maxWidth)
+
+        canvas = document.createElement("canvas");
+        canvas.width = newWidth; canvas.height = newHeight;
+        ctx = canvas.getContext("2d");
+        ctx.drawImage(image, 0, 0, newWidth, newHeight);
+        newDataUrl = canvas.toDataURL(imageType, imageArguments);
+        resolve(newDataUrl);
     }
   };
 

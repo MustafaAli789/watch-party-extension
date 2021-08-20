@@ -24,10 +24,7 @@ const copyImgBtn: HTMLButtonElement = <HTMLButtonElement>document.querySelector(
 const syncBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .syncBtn")
 const chatToggleBtn: HTMLButtonElement = document.querySelector("#mainPage .actions .actionBtns .chatToggle")
 const posOffsetBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("posOffsetBtn")
-const negOffsetBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("negOffsetBtn")
 const resetOffsetBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("resetOffsetBtn")
-
-
 
 //Inputs
 const nameInput: HTMLInputElement = <HTMLInputElement>document.querySelector("#startPage .addItemContainer .nameInput");
@@ -57,14 +54,10 @@ chrome.tabs.query({active:true, currentWindow: true}, tabs => {
                 pageMetadata.pageType = Page.MAIN
                 chatToggled = resp.payload.chatOpen
 
+                changePage(pageMetadata)
                 updateMainUsers(resp.payload.room.users)
                 setChatOpenToggle(chatToggled)
-                changePage(pageMetadata)
-                if (!resp.payload.room.users.find(user => user.current)?.admin) {
-                    setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
-                } else {
-                    offsetContainer.style.display = "none"
-                }
+                setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
             }) 
         }
     })
@@ -164,10 +157,6 @@ posOffsetBtn.addEventListener('click', () => {
     setOffset("UP")
 })
 
-negOffsetBtn.addEventListener('click', () => {
-    setOffset("DOWN")
-})
-
 resetOffsetBtn.addEventListener('click', () => {
     if (offsetInput.value !== "00:00:00") {
         offsetInput.value = "00:00:00"
@@ -185,11 +174,8 @@ const setOffset = (direction: "UP" | "DOWN") => {
 
     // setting button styles
     posOffsetBtn.classList.remove('toggledBtn')
-    negOffsetBtn.classList.remove('toggledBtn')
     if (direction === "UP") {
         posOffsetBtn.classList.add('toggledBtn')
-    } else if(direction === "DOWN") {
-        negOffsetBtn.classList.add('toggledBtn')
     }
 
     if ((offsetTime > 0 && direction !== null) || (!direction && offsetTime === 0)) {
@@ -241,13 +227,7 @@ const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
                         changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
                         updateMainUsers(resp.payload.room.users)
                         setChatOpenToggle(resp.payload.chatOpen)
-
-                        //cur user is not admin (admin doesnt see offset shenanigans)
-                        if (!resp.payload.room.users.find(user => user.current)?.admin) {
-                            setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
-                        } else {
-                            offsetContainer.style.display = "none"
-                        }
+                        setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
                     }
                 })
             }
@@ -306,10 +286,14 @@ const setChatOpenToggle = (chatOpen: Boolean) => {
 
 const setOffsetInput = (offsetTime: number, videoLength: number) => {
 
+    // Admin does not see offset input
+    if (localUsers.find(user => user.current)?.admin) {
+        offsetContainer.style.display = "none"
+        return
+    }
+
     if (offsetTime > 0) {
         posOffsetBtn.classList.add('toggledBtn')
-    } else if (offsetTime < 0) {
-        negOffsetBtn.classList.add('toggledBtn')
     }
 
     offsetTime < 0 ? offsetTime*=-1 : null
@@ -331,13 +315,7 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         if (sender.tab?.id === curActiveTabId && request.message === Messages.TOPOPUP_ROOM_DATA) {
             let reqData = <ToPopupRoomPayload>request.payload
             updateMainUsers(reqData.room.users)
-
-            //cur user is not admin (admin doesnt see offset shenanigans)
-            if (!reqData.room.users.find(user => user.current)?.admin) {
-                setOffsetInput(reqData.offsetTime, reqData.videoLength)
-            } else {
-                offsetContainer.style.display = "none"
-            }
+            setOffsetInput(reqData.offsetTime, reqData.videoLength)
         }
     })
     return true

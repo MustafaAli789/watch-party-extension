@@ -139,6 +139,31 @@ html, body {
 #mainPage .users .currentUser{
     background-color: #d0d0d0;
 }
+#mainPage .users .adminUser{
+    flex-direction: column;
+}
+#mainPage .users .userElem .adminNameContainer {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+#mainPage .users .userElem .adminTimerContainer {
+    height: 20px;
+    margin-top: 5px;
+    width: 100%;
+    border: 1px solid black;
+    position: relative;
+}
+#mainPage .users .userElem .adminTimerContainer #loadingBar{
+    height: 100%;
+    width: 43%;
+    background-color: #5bf35b;
+}
+#mainPage .users .userElem .adminTimerContainer #adminTime{
+    position: absolute;
+    top: 3px;
+    left: 100px;
+}
 #mainPage .actions {
     margin-left: 10px;
     margin-right: 30px;

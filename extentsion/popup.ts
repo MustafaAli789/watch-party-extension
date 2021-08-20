@@ -269,12 +269,44 @@ const updateMainUsers = (users: Array<User>) => {
         if (!!user.current) {
             userElem.classList.add("currentUser")
         }
-        let userIcon = (user.admin ? "<img class='userIcon' src='../images/adminUser.png' alt='adminuser'>" : "<img class='userIcon' src='../images/user.png' alt='normaluser'>")
+        if (user.admin && !user.current) {
+            userElem.classList.add("adminUser")
+        }
+        let imgTitle = user.admin ? (!!user.current ? 'Current User Admin' : 'Admin') : (!!user.current ? 'Current User' : 'Room User')
+        let userIcon = (user.admin ? `<img class='userIcon' src='../images/adminUser.png' alt='adminuser' title=${imgTitle}>` : `<img class='userIcon' src='../images/user.png' alt='normaluser' title=${imgTitle}>`)
         let userName = (!!user.current ? `<strong>${user.userName}</strong>` : `${user.userName}`)
-        userElem.innerHTML = userIcon+`<span style="margin-left:5px; max-width: 80%; word-break: break-all">${userName}</span>`+`<div class="userColorCircle" style="background-color:${user.color}"></div>`;
+        
+        if (user.admin && !user.current) {
+            let adminNameContainer = '<div class="adminNameContainer">'+userIcon+`<span style="margin-left:5px; max-width: 80%; word-break: break-all">${userName}</span>`+`<div class="userColorCircle" style="background-color:${user.color}"></div></div>`;
+            let adminTimerContainer = `
+                <div class="adminTimerContainer">
+                    <div id="loadingBar"></div>
+                    <span id="adminTime">00:11:04/00:25:15</span>
+                </div>
+            `
+            userElem.innerHTML = adminNameContainer+adminTimerContainer
+        } else {
+            userElem.innerHTML = userIcon+`<span style="margin-left:5px; max-width: 80%; word-break: break-all">${userName}</span>`+`<div class="userColorCircle" style="background-color:${user.color}"></div>`;
+        }
         usersListContainer.append(userElem);
     });
 }
+
+`<div style="
+height: 20px;
+margin-top: 5px;
+width: 100%;
+border: 1px solid black;
+position: relative;
+"><div style="
+height: 100%;
+width: 43%;
+background-color: #5bf35b;
+"></div><span style="
+position: absolute;
+top: 3px;
+left: 100px;
+">00:11:04/00:25:15</span></div>`
 
 const setChatOpenToggle = (chatOpen: Boolean) => {
     if (chatOpen) {

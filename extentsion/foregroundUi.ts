@@ -397,7 +397,7 @@ export const createInScreenFloatingMenu = (roomName: String, curRoomUsers: Array
     `
     floatingMenuBlock.innerHTML = `
         <div class="head">
-            <img src="${chrome.runtime.getURL('images/icon-32x32.png')} alt="watchpartylogo">
+            <img src="${chrome.runtime.getURL('images/icon-32x32.png')}" alt="watchparty">
             <h4><span style="color: white">Room </span>${roomName}</h4>
         </div>
         ${adminTimeContainer}

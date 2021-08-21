@@ -21,3 +21,10 @@ export interface ToFgOffsetPayload {
     offsetTime: number,
     direction: "UP" | "DOWN"
 }
+
+export interface ToPopupAdminTimeInfoPayload {
+    curTime: number,
+    vidDuration: number,
+    vidPaused: Boolean,
+    vidBuffering: Boolean
+}

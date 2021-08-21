@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { addUserToRoom, removeUser, addRoom, getRoom, getRoomFromUserId, getAdminUserFromRoom, getUserFromId } from './util'
 import { SocketEvents, RoomAction, UserChange } from '../sharedmodels/constants'
 
-import { ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload } from '../sharedmodels/payloads'
+import { ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload, ToExtVidTimeRequestPayload, ToServerCurTimeInfoPayload, ToExtCurTimeInfoPayload } from '../sharedmodels/payloads'
 import { Message } from '../sharedmodels/message';
 import { User } from '../sharedmodels/user';
 import { Room } from '../sharedmodels/room';
@@ -106,6 +106,15 @@ io.on(SocketEvents.SERVER_CONNECTION, (socket) => {
     let user: User = getUserFromId(socket.id)
     getRoomFromUserId(user.userId).messages.push(msg)
     socket.to(user.roomId).emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
+  })
+
+  socket.on(SocketEvents.TO_SERVER_ADMIN_CUR_TIME_REQ, _ => {
+    let curUser: User = getUserFromId(socket.id)
+    let curUserRoomAdmin: User = getAdminUserFromRoom(curUser.roomId)
+    socket.to(curUserRoomAdmin.userId).emit(SocketEvents.TO_EXT_ADMIN_CUR_TIME_REQ, { triggeringUser: curUser } as ToExtVidTimeRequestPayload)
+  })
+  socket.on(SocketEvents.TO_SERVER_ADMIN_CUR_TIME_DATA, (data: ToServerCurTimeInfoPayload) => {
+    socket.to(data.userIdToSendTo).emit(SocketEvents.TO_EXT_ADMIN_CUR_TIME_DATA, data as ToExtCurTimeInfoPayload)
   })
 
   socket.on(SocketEvents.TO_SERVER_SET_OFFSET, (offset: ToServerOffsetTimePayload) => {

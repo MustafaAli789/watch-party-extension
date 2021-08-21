@@ -1,5 +1,5 @@
 import { Messages, Page } from './models/constants'
-import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoomPayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupAdminTimeInfoPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { PageMetadata } from './models/Miscellaneous';
 
@@ -8,6 +8,7 @@ import {  } from '../sharedmodels/payloads'
 
 let localUsers: User[] = []
 let chatToggled: Boolean = true
+let activeTabId: number
 
 //Containers
 const startPage: HTMLDivElement = document.querySelector("#startPage");
@@ -39,7 +40,7 @@ const roomNameElem: HTMLHeadingElement = document.querySelector("#mainPage .head
 
 //Initial open of popup
 chrome.tabs.query({active:true, currentWindow: true}, tabs => {
-    let activeTabId = tabs[0].id
+    activeTabId = tabs[0].id
     let pageMetadata: PageMetadata = <PageMetadata>{roomName: "", pageType: Page.START}
 
     chrome.tabs.sendMessage(activeTabId, {
@@ -97,52 +98,24 @@ syncBtn.addEventListener('click', () => {
     if (localUsers.length === 1){
         return
     }
-    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
-        let activeTabId = tabs[0].id
-        chrome.tabs.sendMessage(activeTabId, {
-            message: Messages.TOFG_IS_CHANNEL_OPEN
-        } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
-            if (resp.status == Messages.SUCCESS && resp.payload) {
-                chrome.tabs.sendMessage(activeTabId, {
-                    message: Messages.TOFG_SYNC_VID
-                } as MessageObject<null>)
-            }
-        })
-    })
+    chrome.tabs.sendMessage(activeTabId, {
+        message: Messages.TOFG_SYNC_VID
+    } as MessageObject<null>)
 })
 chatToggleBtn.addEventListener('click', () => {
     chatToggled = !chatToggled
-    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
-        let activeTabId = tabs[0].id
-        chrome.tabs.sendMessage(activeTabId, {
-            message: Messages.TOFG_IS_CHANNEL_OPEN
-        } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
-            if (resp.status == Messages.SUCCESS && resp.payload) {
-                chrome.tabs.sendMessage(activeTabId, {
-                    message: Messages.TOFG_CHAT_TOGGLE,
-                    payload: chatToggled
-                } as MessageObject<Boolean>, resp =>{
-                    setChatOpenToggle(chatToggled)
-                })
-            }
-        })
+    chrome.tabs.sendMessage(activeTabId, {
+        message: Messages.TOFG_CHAT_TOGGLE,
+    } as MessageObject<null>, _ =>{
+        setChatOpenToggle(chatToggled)
     })
 })
 
 const leaveRoom = () => {
-    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
-        let activeTabId = tabs[0].id
-        chrome.tabs.sendMessage(activeTabId, {
-            message: Messages.TOFG_IS_CHANNEL_OPEN
-        } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
-            if (resp.status == Messages.SUCCESS && resp.payload) {
-                chrome.tabs.sendMessage(activeTabId, {
-                    message: Messages.TOFG_DISCONNECT
-                } as MessageObject<null>)
-            }
-        })
-        changePage({ pageType: Page.START, roomId: null, roomName: "" })
-    })
+    chrome.tabs.sendMessage(activeTabId, {
+        message: Messages.TOFG_DISCONNECT
+    } as MessageObject<null>)
+    changePage({ pageType: Page.START, roomId: null, roomName: "" })
 }
 
 copyImgBtn.addEventListener('click', () => {
@@ -179,19 +152,10 @@ const setOffset = (direction: "UP" | "DOWN") => {
     }
 
     if ((offsetTime > 0 && direction !== null) || (!direction && offsetTime === 0)) {
-        chrome.tabs.query({active:true, currentWindow: true}, tabs => {
-            let activeTabId = tabs[0].id
-            chrome.tabs.sendMessage(activeTabId, {
-                message: Messages.TOFG_IS_CHANNEL_OPEN
-            } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
-                if (resp.status == Messages.SUCCESS && resp.payload) {
-                    chrome.tabs.sendMessage(activeTabId, {
-                        message: Messages.TOFG_SET_OFFSET,
-                        payload: { offsetTime: offsetTime, direction: direction }
-                    } as MessageObject<ToFgOffsetPayload>)
-                }
-            })
-        })
+        chrome.tabs.sendMessage(activeTabId, {
+            message: Messages.TOFG_SET_OFFSET,
+            payload: { offsetTime: offsetTime, direction: direction }
+        } as MessageObject<ToFgOffsetPayload>)
     }
 }
 
@@ -218,20 +182,17 @@ const createNewRoomWithValidation = () => {
 }
 
 const goIntoRoomWithValidation = (messageObject: MessageObject<any>) => {
-    chrome.tabs.query({active:true, currentWindow: true}, tabs => {
-        let activeTabId: number = tabs[0].id;
-        chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
-            if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
-                chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ToPopupRoomPayload>) => {
-                    if (resp.status === Messages.SUCCESS) {
-                        changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
-                        updateMainUsers(resp.payload.room.users)
-                        setChatOpenToggle(resp.payload.chatOpen)
-                        setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
-                    }
-                })
-            }
-        })
+    chrome.tabs.sendMessage(activeTabId, { message: Messages.TOFG_VIDEO_ON_SCREEN } as MessageObject<null>, (resp: ResponseObject<boolean>) => {
+        if (resp.status === Messages.SUCCESS && resp.payload && validRoomInput()) { 
+            chrome.tabs.sendMessage(activeTabId, messageObject, (resp: ResponseObject<ToPopupRoomPayload>) => {
+                if (resp.status === Messages.SUCCESS) {
+                    changePage( { pageType: Page.MAIN, roomId: resp.payload.room.roomId, roomName: resp.payload.room.roomName } as PageMetadata)
+                    updateMainUsers(resp.payload.room.users)
+                    setChatOpenToggle(resp.payload.chatOpen)
+                    setOffsetInput(resp.payload.offsetTime, resp.payload.videoLength)
+                }
+            })
+        }
     })
 }
 
@@ -249,7 +210,6 @@ const changePage = (pageMetadata: PageMetadata) => {
 
         roomNameElem.innerHTML =  `${pageMetadata.roomName}`;
         roomIdElem.innerHTML = `${pageMetadata.roomId}`;
-
     }
 }
 
@@ -272,7 +232,7 @@ const updateMainUsers = (users: Array<User>) => {
         if (user.admin && !user.current) {
             userElem.classList.add("adminUser")
         }
-        let imgTitle = user.admin ? (!!user.current ? 'Current User Admin' : 'Admin') : (!!user.current ? 'Current User' : 'Room User')
+        let imgTitle = user.admin ? (!!user.current ? 'CurrentUserAdmin' : 'Admin') : (!!user.current ? 'CurrentUser' : 'RoomUser')
         let userIcon = (user.admin ? `<img class='userIcon' src='../images/adminUser.png' alt='adminuser' title=${imgTitle}>` : `<img class='userIcon' src='../images/user.png' alt='normaluser' title=${imgTitle}>`)
         let userName = (!!user.current ? `<strong>${user.userName}</strong>` : `${user.userName}`)
         
@@ -282,6 +242,7 @@ const updateMainUsers = (users: Array<User>) => {
                 <div class="adminTimerContainer">
                     <div id="loadingBar"></div>
                     <span id="adminTime">00:11:04/00:25:15</span>
+                    <span id="adminVidPlaying"></span>
                 </div>
             `
             userElem.innerHTML = adminNameContainer+adminTimerContainer
@@ -322,19 +283,46 @@ const setOffsetInput = (offsetTime: number, videoLength: number) => {
     offsetInput.value = curTime
 }
 
+const updateAdminContainer = (adminCurTime: number, adminVidLength: number, adminVidPaused: Boolean, adminVidBuffering: Boolean) => {
+    let loadingBar: HTMLDivElement = <HTMLDivElement>document.getElementById("loadingBar")
+    let adminTime: HTMLSpanElement = document.getElementById("adminTime")
+    let adminVidPlaying: HTMLSpanElement = document.getElementById("adminVidPlaying")
+
+    loadingBar.style.width = `${(adminCurTime/adminVidLength)*100}%`
+
+    let curTimeFormatted = new Date(adminCurTime * 1000).toISOString().substr(11, 8)
+    let vidLengthFormatted = new Date(adminVidLength * 1000).toISOString().substr(11, 8)
+    adminTime.innerHTML = `${curTimeFormatted}/${vidLengthFormatted}`
+    adminVidPlaying.innerHTML = adminVidBuffering ? "⌛" : (adminVidPaused ? "⏸︎" : "⏩︎")
+    adminVidPlaying.title = adminVidBuffering ? "Buffering" : (adminVidPaused ? "Paused" : "Playing")
+}
+
 // Message handler
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
 
     //Check below is important b/c if we have multiple popups open in diff windows, we dont want all reacting to same event
-    chrome.tabs.query({active: true, currentWindow:true}, tabs => {
-        let curActiveTabId = tabs[0].id
-        if (sender.tab?.id === curActiveTabId && request.message === Messages.TOPOPUP_ROOM_DATA) {
+    if (sender.tab?.id === activeTabId) {
+        if (request.message === Messages.TOPOPUP_ROOM_DATA) {
             let reqData = <ToPopupRoomPayload>request.payload
             updateMainUsers(reqData.room.users)
             setOffsetInput(reqData.offsetTime, reqData.videoLength)
+            setChatOpenToggle(reqData.chatOpen)
+        } else if (request.message === Messages.TOPOPUP_ADMIN_VID_TIME_INFO) {
+            let reqData = <ToPopupAdminTimeInfoPayload>request.payload
+            updateAdminContainer(reqData.curTime, reqData.vidDuration, reqData.vidPaused, reqData.vidBuffering)
+        } else if (request.message === Messages.TOPOPUP_LEAVE_ROOM) {
+            changePage({ pageType: Page.START, roomId: null, roomName: "" })
         }
-    })
+    }
     return true
 });
 
+setInterval(() => {
+    //i.e we are connected to a room RN and current user is not admin
+    if (localUsers.length > 0 && !localUsers.find(user => user.admin).current) {
+        chrome.tabs.sendMessage(activeTabId, {
+            message: Messages.TOFG_GET_ADMIN_VID_TIME
+        } as MessageObject<null>)
+    }
+}, 1000)
 

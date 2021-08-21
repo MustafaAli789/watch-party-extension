@@ -42,3 +42,23 @@ export interface ToExtSyncVideoPayload {
 export interface ToServerOffsetTimePayload {
     offsetTime: number
 }
+
+// All of below are involved in seeing admins current spot in the video
+export interface ToExtVidTimeRequestPayload {
+    triggeringUser: User
+}
+
+export interface ToServerCurTimeInfoPayload {
+    curTime: number,
+    vidDuration: number,
+    vidPaused: Boolean,
+    vidBuffering: Boolean,
+    userIdToSendTo: string
+}
+
+export interface ToExtCurTimeInfoPayload {
+    curTime: number,
+    vidDuration: number,
+    vidPaused: Boolean,
+    vidBuffering: Boolean
+}

@@ -164,6 +164,11 @@ html, body {
     top: 3px;
     left: 100px;
 }
+#mainPage .users .userElem .adminTimerContainer #adminVidPlaying{
+    position: absolute;
+    top: 1px;
+    right: 2px;
+}
 #mainPage .actions {
     margin-left: 10px;
     margin-right: 30px;
@@ -276,9 +281,10 @@ html, body {
     transition: background-color 0.2s;
 }
 .hidden{
-    display: none;
+    display: none !important;
 }
 .disabledBtn{
-    background-color: lightgrey;
-    color: grey;
+    background-color: lightgrey !important;
+    color: grey !important;
+    cursor: unset !important;
 }

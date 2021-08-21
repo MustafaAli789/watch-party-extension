@@ -1,10 +1,10 @@
 import { Messages } from './models/constants'
-import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupRoomPayload } from './models/payloads';
+import { ToFgJoinRoomPayload, ToFgNewRoomPayload, ToFgOffsetPayload, ToPopupAdminTimeInfoPayload, ToPopupRoomPayload } from './models/payloads';
 import { MessageObject, ResponseObject,  } from './models/messagepassing';
 import { NotifDataInterface, NotifActionButtonInterface } from "./models/Miscellaneous"
 
 import { SocketEvents, RoomAction, UserChange, VideoEvent } from '../sharedmodels/constants'
-import {  ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload } from '../sharedmodels/payloads'
+import {  ToServerJoinRoomPayload, ToExtRoomDataPayload, ToExtUserChangePayload, ToServerVideoEventPayload, ToExtVideoEventPayload, ToExtSyncVideoPayload, ToServerOffsetTimePayload, ToExtVidTimeRequestPayload, ToServerCurTimeInfoPayload, ToExtCurTimeInfoPayload } from '../sharedmodels/payloads'
 import { VideoData } from '../sharedmodels/videoData';
 
 import { Socket, io } from 'socket.io-client'; 
@@ -12,7 +12,7 @@ import { Room } from '../sharedmodels/room';
 import { User } from '../sharedmodels/user';
 import { Message } from '../sharedmodels/message';
 
-import { addNotif, createChatComponent, deleteChatComponent, updateChat, toggleChatComponentContainerInView  } from './foregroundUi'
+import { addNotif, createChatComponent, deleteChatComponent, updateChat, toggleChatComponentContainerInView, createInScreenFloatingMenu, deleteFloatingMenuComponent, updateInScreenFloatingMenu  } from './foregroundUi'
 
 var vidElem: HTMLVideoElement = document.querySelector('video')
 var socket: Socket
@@ -31,7 +31,7 @@ var seekedTimeout;
 var SEEKEVENT_TIMEOUT = 50;
 
 const getCurUser = (room: Room): User => {
-    return room.users.find(user => user.current)
+    return room?.users.find(user => user.current)
 }
 const getHourAndMinFormatted = (): string => {
     let curDate: Date = new Date()
@@ -151,9 +151,10 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             } as ResponseObject<ToPopupRoomPayload>)
 
             toggleChatComponentContainerInView(true)
-            createChatComponent(currentRoom.roomName, socket, getCurUser(currentRoom))
+            createChatComponent(currentRoom.roomName, getCurUser(currentRoom), (msg: Message) => sendMsg(msg), () => toggleChat(true))
+            createInScreenFloatingMenu(currentRoom.roomName, currentRoom.users, () => leaveRoom(true), sync, () => toggleChat(true), requestAdminTime)
 
-            let initWelcomeMsg: Message = { user: null, type: "MSG", content: `${getCurUser(currentRoom).userName}, welcome to room ${currentRoom.roomName}`, timestamp: getHourAndMinFormatted() }
+            let initWelcomeMsg: Message = { user: null, type: "MSG", content: `${getCurUser(currentRoom)?.userName}, welcome to room ${currentRoom.roomName}`, timestamp: getHourAndMinFormatted() }
 
             updateChat([...currentRoom.messages,initWelcomeMsg], getCurUser(currentRoom))
         } else if(currentRoom.users !== data.room.users) {
@@ -166,9 +167,10 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
 
             chrome.runtime.sendMessage({
                 message: Messages.TOPOPUP_ROOM_DATA,
-                payload: {room: currentRoom, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom).offsetTime}
+                payload: {room: currentRoom, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom)?.offsetTime}
             } as MessageObject<ToPopupRoomPayload>)
         }
+        updateInScreenFloatingMenu(null, currentRoom, null)
     })
 
     socket.on(SocketEvents.TO_EXT_USER_CHANGE, (data: ToExtUserChangePayload) => {
@@ -204,6 +206,24 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
             error: vidElem.readyState <= 2 ? errMsg : null } as ToServerVideoEventPayload)
     })
 
+    //Theoretically, only admin should ever recieve this
+    socket.on(SocketEvents.TO_EXT_ADMIN_CUR_TIME_REQ, (data: ToExtVidTimeRequestPayload) => {
+        socket.emit(SocketEvents.TO_SERVER_ADMIN_CUR_TIME_DATA, { 
+            userIdToSendTo: data.triggeringUser.userId,
+            vidDuration: vidElem.duration,
+            vidPaused: vidElem.paused,
+            vidBuffering: vidElem.readyState <= 2,
+            curTime: vidElem.currentTime
+         } as ToServerCurTimeInfoPayload)
+    })
+    socket.on(SocketEvents.TO_EXT_ADMIN_CUR_TIME_DATA, (data: ToExtCurTimeInfoPayload) => {
+        chrome.runtime.sendMessage({
+            message: Messages.TOPOPUP_ADMIN_VID_TIME_INFO,
+            payload: data
+        } as MessageObject<ToPopupAdminTimeInfoPayload>)
+        updateInScreenFloatingMenu(data, null, null)
+    })
+
     socket.on(SocketEvents.TO_SERVER_TO_EXT_VIDEO_EVENT, (videoEventData: ToExtVideoEventPayload) => {
         let elapsedTimeSinceRequestSec = (Date.now() - videoEventData.videoData.timestamp)/1000
         let newVidTime
@@ -221,7 +241,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 algorithmicVideoEventHappened.seek = true
 
                 //need to account for differences in offsets
-                newVidTime = videoEventData.videoData.playbackTime + (getCurUser(currentRoom).offsetTime - videoEventData.triggeringUser.offsetTime)
+                newVidTime = videoEventData.videoData.playbackTime + (getCurUser(currentRoom)?.offsetTime - videoEventData.triggeringUser.offsetTime)
 
                 //if video was playing and someone seeks, then account for that little time it takes to recieve req and their vid playing during that time
                 if (!vidElem.paused) {
@@ -276,7 +296,7 @@ const createSocketConnection = (roomData: ToServerJoinRoomPayload, sendResponse)
                 algorithmicVideoEventHappened.seek = true
 
                 //need to account for differences in offsets
-                newVidTime = videoEventData.videoData.playbackTime + (getCurUser(currentRoom).offsetTime - videoEventData.triggeringUser.offsetTime)
+                newVidTime = videoEventData.videoData.playbackTime + (getCurUser(currentRoom)?.offsetTime - videoEventData.triggeringUser.offsetTime)
 
                 //if video was playing and someone seeks, then account for that little time it takes to recieve req and their vid playing during that time
                 if (!vidElem.paused) {
@@ -305,6 +325,43 @@ const retrieveVideoData = (): VideoData => {
         speed: vidElem.playbackRate,
         playbackTime: vidElem.currentTime
     }
+}
+
+const leaveRoom = (sendToPopup?: Boolean) => {
+    currentRoom = null
+    chatOpen = false
+    deleteChatComponent()
+    deleteFloatingMenuComponent()
+    socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
+
+    if (sendToPopup) {
+        chrome.runtime.sendMessage({
+            message: Messages.TOPOPUP_LEAVE_ROOM
+        } as MessageObject<null>)
+    }
+
+}
+const sync = () => {
+    socket.emit(SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, {}, (err) => {
+        addNotif({ headerMsg: 'Sync Error', bodyMsg: err, type: 'ERROR' })
+    })
+}
+const toggleChat = (sendToPopup?: Boolean) => {
+    chatOpen = !chatOpen
+    toggleChatComponentContainerInView(chatOpen)
+
+    if (sendToPopup) {
+        chrome.runtime.sendMessage({
+            message: Messages.TOPOPUP_ROOM_DATA,
+            payload: { room: currentRoom, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom)?.offsetTime }
+        } as MessageObject<ToPopupRoomPayload>)
+    }
+}
+const requestAdminTime = () => {
+    socket.emit(SocketEvents.TO_SERVER_ADMIN_CUR_TIME_REQ)
+}
+const sendMsg = (msg: Message) => {
+    socket.emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
 }
 
 chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendResponse) => {
@@ -342,17 +399,14 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
         establishSocketConnectionForExistingRoom(<ToFgJoinRoomPayload>request.payload, sendResponse)
         return true
     } else if (request.message === Messages.TOFG_DISCONNECT) {
-        currentRoom = null
-        chatOpen = false
-        deleteChatComponent()
-        socket.emit(SocketEvents.TO_SERVER_FORCE_DISCONNECT)
+        leaveRoom()
         sendResponse({
             status: Messages.SUCCESS
         } as ResponseObject<null>)
     } else if (request.message === Messages.TOFG_RETRIEVE_ROOM_DATA) {
         sendResponse({
             status: Messages.SUCCESS,
-            payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom).offsetTime}
+            payload: {room: currentRoom, chatOpen: chatOpen, videoLength: vidElem.duration, offsetTime: getCurUser(currentRoom)?.offsetTime}
         } as ResponseObject<ToPopupRoomPayload>)
         return true
     } else if (request.message === Messages.TOFG_DO_YOU_EXIST) {
@@ -366,27 +420,34 @@ chrome.runtime.onMessage.addListener((request: MessageObject<any>, sender, sendR
             payload: socket !== undefined && socket !== null
         } as ResponseObject<boolean>)
     } else if (request.message === Messages.TOFG_SYNC_VID) {
-        socket.emit(SocketEvents.TO_SERVER_TO_EXT_SYNC_VIDEO, {}, (err) => {
-            addNotif({ headerMsg: 'Sync Error', bodyMsg: err, type: 'ERROR' })
-        })
+        sync()
         return true
     } else if (request.message === Messages.TOFG_CHAT_TOGGLE) {
-        chatOpen = request.payload
-        toggleChatComponentContainerInView(request.payload)
+        toggleChat()
+        updateInScreenFloatingMenu(null, null, chatOpen)
     } else if (request.message === Messages.TOFG_SET_OFFSET) {
         let payload = <ToFgOffsetPayload>request.payload
-        let oldOffsetTime = getCurUser(currentRoom).offsetTime
+        let oldOffsetTime = getCurUser(currentRoom)?.offsetTime
 
+        //Setting new offset time locally
         let newOffsetTime = payload.offsetTime*(payload.direction === "DOWN" ? -1 : 1)
         let newOffsetTimeFormatted = new Date(newOffsetTime * 1000).toISOString().substr(11, 8)
-        getCurUser(currentRoom).offsetTime = newOffsetTime
+        if (!!getCurUser(currentRoom)) {
+            getCurUser(currentRoom).offsetTime = newOffsetTime
+        }
 
+        //Settig new offset time in server
         socket.emit(SocketEvents.TO_SERVER_SET_OFFSET, { offsetTime: newOffsetTime } as ToServerOffsetTimePayload)
         addNotif({ headerMsg: 'Offset Time Set', bodyMsg: "Successfully set offset time to " + newOffsetTimeFormatted, type: 'SUCCESS' })
 
         algorithmicVideoEventHappened.seek = true
         vidElem.currentTime = vidElem.currentTime+newOffsetTime-oldOffsetTime //need the -oldOffsetTime to make sure it resets to normal sync with admin
 
+        updateInScreenFloatingMenu(null, currentRoom, null)
+
+        return true
+    } else if (request.message === Messages.TOFG_GET_ADMIN_VID_TIME) {
+        requestAdminTime()
         return true
     }
 });

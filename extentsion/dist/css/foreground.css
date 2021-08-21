@@ -252,6 +252,142 @@
     width: 100%;
 }
 
+/* Floating Menu */
+#floatingMenuContainer {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+}
+#floatingMenuBlock {
+    width: 200px;
+    background-color: rgb(95, 95, 95);
+    position: relative;
+    right: 190px;
+    bottom: 10px;
+    border-radius: 5px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: auto;
+    font-size: 12px;
+}
+#floatingMenuBlock .head{
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+#floatingMenuBlock .head h4 {
+    word-break: break-all;
+    margin-left: 10px;
+}
+#floatingMenuBlock .head img {
+    width: 22px;
+}
+
+#floatingMenuCircle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.floatingMenuCircleInactive {
+    background-color: rgba(156, 156, 156, 0.425);
+    color: rgba(255, 255, 255, 0.596);
+}
+.floatingMenuCircleActive {
+    background-color: rgb(95, 95, 95);
+    color: white;
+}
+#floatingMenuCircle:not(.floatingMenuCircleActive):hover{
+    background-color: rgb(95, 95, 95);
+    color: white;
+}
+
+.adminTimerContainer {
+    height: 30px;
+    margin-top: 5px;
+    width: 100%;
+    border: 1px solid black;
+    position: relative;
+}
+.adminTimerContainer #loadingBar{
+    height: 100%;
+    width: 43%;
+    background-color: rgb(4, 171, 4);
+}
+.adminTimerContainer #userIcon{
+    width: 18px;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+.adminTimerContainer #adminTime{
+    position: absolute;
+    top: 5px;
+    left: 50px;
+    color: white;
+}
+.adminTimerContainer #adminVidPlaying{
+    position: absolute;
+    top: 5px;
+    right: 2px;
+}
+
+.actionBtnContainer {
+    display: flex;
+    flex-direction: column;
+    margin-top: 5px;
+}
+
+.actionBtnContainer button {
+    width: 49%;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+.actionBtnContainer button:not(.toggledBtn) {
+    background-color: white;
+    color: black;
+}
+.actionBtnContainer button:not(.disabledBtn):not(.toggledBtn):hover {
+    background-color: black;
+    color: white;
+}
+#leaveRoomBtn {
+    width: 100%;
+    cursor: pointer;;
+    border: none;
+    background-color: #63c1e6;
+    border-radius: 3px;
+    color: #b31313;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+#leaveRoomBtn:hover{
+    background-color: #4888a1;
+}
+
+
 .removeFromView {
-    display: none;
+    display: none !important;
+}
+.disabledBtn{
+    background-color: lightgrey !important;
+    color: grey !important;
+    cursor: unset !important;
+}
+.toggledBtn{
+    background-color: black;
+    color: white;
+}
+.toggledBtn:hover{
+    background-color: white;
+    color: black;
 }

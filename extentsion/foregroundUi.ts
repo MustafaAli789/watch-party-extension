@@ -1,6 +1,6 @@
-import { Socket } from "socket.io-client"
-import { SocketEvents } from "../sharedmodels/constants"
+
 import { Message } from "../sharedmodels/message"
+import { Room } from "../sharedmodels/room"
 import { User } from "../sharedmodels/user"
 import { Messages } from "./models/constants"
 import { MessageObject } from "./models/messagepassing"
@@ -9,6 +9,13 @@ import { NotifDataInterface, NotifActionButtonInterface } from "./models/Miscell
 const getHourAndMinFormatted = (): string => {
     let curDate: Date = new Date()
     return `${curDate.getHours()}:${curDate.getMinutes()}:${curDate.getSeconds()}`
+}
+
+interface AdminVideoData {
+    curTime: number,
+    vidDuration: number,
+    vidPaused: Boolean,
+    vidBuffering: Boolean
 }
 
 // Notif Container
@@ -22,10 +29,14 @@ var notifCount = 0
 var chatContainer = document.createElement('DIV')
 chatContainer.id = "chatContainer"
 chatContainer.classList.add('removeFromView')
-chatContainer.style.zIndex = "9999999999999"
+chatContainer.style.zIndex = "999"
 var msgContentType: "IMG" | "MSG" = "MSG"
 var msgContent: string = ""
 document.querySelector('body').appendChild(chatContainer)
+
+var floatingMenuCurrentlyPressed = false
+var floatingMenuBeingDragged = false
+var floatingMenuActive= false
 
 export const addNotif = (data: NotifDataInterface, actionButtonData?: NotifActionButtonInterface) => {
     notifCount++
@@ -76,7 +87,7 @@ const removeNotif = (toastId: string) => {
 }
 
 // inspo https://stackoverflow.com/questions/21426056/horizontal-sliding-panel-with-relative-postion-handle-show-hide-jquery
-export const createChatComponent = (roomName: string, socket: Socket, curUser: User) => {
+export const createChatComponent = (roomName: string, curUser: User, sendMsg: Function, toggleChat: Function) => {
     chatContainer.innerHTML = `<div class="panel" style="background-color:white;">
         <div class="infoBar">
             <div class="leftInnerContainer">
@@ -117,13 +128,14 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
 
     document.querySelector(".rightInnerContainer a").addEventListener('click', (e) => {
         e.preventDefault()
-        slideChatComponent()
+        toggleChat()
+        updateInScreenFloatingMenu(null, null, false)
     })
 
     let input: HTMLInputElement = document.querySelector('.input')
     input.addEventListener('keydown', (key: KeyboardEvent) => {
         if (key.code === 'Enter' && msgContent.length > 0) {
-            sendMsg(socket, curUser)
+            sendMessage(sendMsg, curUser)
             input.value = ""
             msgContent = ""
         }
@@ -133,7 +145,7 @@ export const createChatComponent = (roomName: string, socket: Socket, curUser: U
     })
     document.querySelector('.sendButton').addEventListener('click', () => {
         if (msgContent.length > 0) {
-            sendMsg(socket, curUser)
+            sendMessage(sendMsg, curUser)
             input.value = ""
             msgContent = ""
             removeChatImageInInput()
@@ -222,9 +234,9 @@ const removeChatImageInInput = () => {
     msgContent = ""
 }
 
-const sendMsg = (socket: Socket, curUser: User) => {
+const sendMessage = (sendMsg: Function, curUser: User) => {
     let msg: Message = { user: curUser, type: msgContentType, content: msgContent, timestamp: getHourAndMinFormatted() }
-    socket.emit(SocketEvents.TO_SERVER_TO_EXT_CHAT, msg)
+    sendMsg(msg)
     updateChat([msg], curUser)
 }
 
@@ -351,4 +363,176 @@ export const updateChat = (messages: Message[], curUser: User) => {
     })
     messagesContainer.scrollTop = messagesContainer.scrollHeight
 
+}
+
+export const deleteFloatingMenuComponent = () => {
+    let floatingMenuContainer: HTMLDivElement = <HTMLDivElement>document.getElementById("floatingMenuContainer")
+    floatingMenuContainer.parentElement.removeChild(floatingMenuContainer)
+}   
+
+export const createInScreenFloatingMenu = (roomName: String, curRoomUsers: Array<User>, leaveRoom: Function, sync: Function, toggleChat: Function, requestAdminTime: Function) => {
+
+    // Floating Draggable Menu 
+    let floatingMenuContainer: HTMLDivElement = <HTMLDivElement>document.createElement("DIV")
+    floatingMenuContainer.innerHTML = "<div id='floatingMenuCircle' class='floatingMenuCircleInactive'>☰</div><div id='floatingMenuBlock' class='removeFromView'></div>"
+    floatingMenuContainer.id = "floatingMenuContainer"
+    floatingMenuContainer.classList.add('removeFromView')
+    floatingMenuContainer.style.zIndex = "9999"
+    document.querySelector('body').appendChild(floatingMenuContainer)
+
+    let floatingMenuBlock: HTMLDivElement = floatingMenuContainer.querySelector("#floatingMenuBlock")
+    let curUser: User = curRoomUsers.find(user => user.current)
+    
+    let curUserOffsetTime = new Date(curUser.offsetTime * 1000).toISOString().substr(11, 8)
+    let adminTimeContainer = `
+        <div id="timerContainer">
+            <div class="adminTimerContainer ${curUser.admin ? 'removeFromView': ''}">
+                <div id="loadingBar"></div>
+                <img id="userIcon" src='${chrome.runtime.getURL('images/adminUser.png')}' alt='adminuser' title="Admin">
+                <span id="adminTime">00:11:04/00:25:15</span>
+                <span id="adminVidPlaying">⏩︎</span>
+            </div>
+            <span id="offsetSubtext" style="color: black">Offset: ${curUserOffsetTime}</span>
+        </div>
+    `
+    floatingMenuBlock.innerHTML = `
+        <div class="head">
+            <img src="${chrome.runtime.getURL('images/icon-32x32.png')} alt="watchpartylogo">
+            <h4><span style="color: white">Room </span>${roomName}</h4>
+        </div>
+        ${adminTimeContainer}
+        <div class="actionBtnContainer">
+            <div class="firstRowBtns" style="margin-bottom: 5px">
+                <button id="syncBtn" class="${curRoomUsers.length == 1 ? 'disabledBtn':''}">Sync</button>
+                <button id="chatToggleBtn" class="toggledBtn">Toggle Chat</button>
+            </div>
+            <button id="leaveRoomBtn">Leave Room</button>
+        </div>
+    `
+
+    let chatToggleBtn: HTMLButtonElement = floatingMenuBlock.querySelector("#chatToggleBtn")
+    let syncBtn: HTMLButtonElement = floatingMenuBlock.querySelector("#syncBtn")
+    let leaveRoomBtn: HTMLButtonElement = floatingMenuBlock.querySelector("#leaveRoomBtn")
+    leaveRoomBtn.addEventListener("click", () => {
+        leaveRoom()
+    })
+    syncBtn.addEventListener('click', () => {
+        if (!syncBtn.classList.contains('disabledBtn')) {
+            sync()
+        }
+    })
+    chatToggleBtn.addEventListener('click', () => {
+        toggleChat()
+        if (chatToggleBtn.classList.contains('toggledBtn')) {
+            chatToggleBtn.classList.remove('toggledBtn')
+        } else {
+            chatToggleBtn.classList.add('toggledBtn')
+        }
+    })
+
+    setUpFloatingMenuMovement(floatingMenuContainer, requestAdminTime, curUser.admin)
+}
+
+export const updateInScreenFloatingMenu = (adminVideoData?: AdminVideoData, roomData?: Room, chatOpen?: Boolean ) => {
+    //room data --> check offset of cur user, if cur user is admin, num of users
+    
+    if (!!roomData) {
+        let syncBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("syncBtn")
+        let offsetSubtext: HTMLSpanElement = document.getElementById("offsetSubtext")
+        let timerContainer: HTMLDivElement = <HTMLDivElement>document.querySelector("#timerContainer")
+        let curUser: User = roomData.users.find(user => user.current)
+        let curUserOffsetTime = new Date(curUser.offsetTime * 1000).toISOString().substr(11, 8)
+        
+        if (roomData.users.length === 1) {
+            syncBtn.classList.add('disabledBtn')
+        } else {
+            syncBtn.classList.remove('disabledBtn')
+        }
+        if (curUser.admin) {
+            timerContainer.classList.add('removeFromView')
+        } else {
+            timerContainer.classList.remove('removeFromView')
+            offsetSubtext.innerHTML = `Offset: ${curUserOffsetTime}`
+        }
+    }
+
+    if (chatOpen !== null) {
+        let chatToggleBtn: HTMLButtonElement = <HTMLButtonElement>document.getElementById("chatToggleBtn")
+        if (chatOpen) {
+            chatToggleBtn.classList.add('toggledBtn')
+        } else {
+            chatToggleBtn.classList.remove('toggledBtn')
+        }
+    }
+
+    if (!!adminVideoData) {
+        let loadingBar: HTMLDivElement = <HTMLDivElement>document.getElementById("loadingBar")
+        let adminTime: HTMLSpanElement = document.getElementById("adminTime")
+        let adminVidPlaying: HTMLSpanElement = document.getElementById("adminVidPlaying")
+
+        loadingBar.style.width = `${(adminVideoData.curTime/adminVideoData.vidDuration)*100}%`
+
+        let curTimeFormatted = new Date(adminVideoData.curTime * 1000).toISOString().substr(11, 8)
+        let vidLengthFormatted = new Date(adminVideoData.vidDuration * 1000).toISOString().substr(11, 8)
+        adminTime.innerHTML = `${curTimeFormatted}/${vidLengthFormatted}`
+        adminVidPlaying.innerHTML = adminVideoData.vidBuffering ? "⌛" : (adminVideoData.vidPaused ? "⏸︎" : "⏩︎")
+        adminVidPlaying.title = adminVideoData.vidBuffering ? "Buffering" : (adminVideoData.vidPaused ? "Paused" : "Playing")
+    }
+    
+}
+
+const setUpFloatingMenuMovement = (floatingMenuContainer: HTMLDivElement, requestAdminTime: Function, curUserAdmin: Boolean) => {
+    let floatingMenuCircle: HTMLDivElement = floatingMenuContainer.querySelector("#floatingMenuCircle")
+    let floatingMenuBlock: HTMLDivElement = floatingMenuContainer.querySelector("#floatingMenuBlock")
+    let reqAdminTimeInterval;
+    floatingMenuContainer.classList.remove('removeFromView')
+
+    floatingMenuCircle.addEventListener('click', () => {
+        if (floatingMenuBeingDragged) {
+            return
+        }
+        if (!floatingMenuActive) {
+            floatingMenuActive = true
+            floatingMenuCircle.classList.add('floatingMenuCircleActive')
+            floatingMenuBlock.classList.remove('removeFromView')
+
+            if (!curUserAdmin) {
+                reqAdminTimeInterval = setInterval(() => {
+                    requestAdminTime()
+                }, 1000)
+            }
+        } else {
+            floatingMenuActive = false
+            floatingMenuBlock.classList.add('removeFromView')
+            floatingMenuCircle.classList.remove('floatingMenuCircleActive')
+
+            if (!curUserAdmin) {
+                clearInterval(reqAdminTimeInterval)
+            }
+        }
+    })
+    floatingMenuCircle.addEventListener('mousedown', () => {
+        floatingMenuCurrentlyPressed = true
+    })
+    floatingMenuCircle.addEventListener('mouseup', () => {
+        floatingMenuCurrentlyPressed = false
+        if (floatingMenuBeingDragged) {
+            setTimeout(() => {
+                floatingMenuBeingDragged = false
+            }, 100)
+        }
+        
+    })
+    document.addEventListener('mousemove', (e) => {
+        if (floatingMenuCurrentlyPressed) {
+            floatingMenuBeingDragged = true
+            floatingMenuContainer.style.top = `${e.clientY-17}px` //17 is circles radius
+            floatingMenuContainer.style.left = `${e.clientX-17}px`
+            if (e.clientX < 200) { //to rotate the dir the menu block comes out of of it too close to left edge
+                floatingMenuBlock.style.left = "20px"
+            } else {
+                floatingMenuBlock.style.left = "auto"
+            }
+        }
+    })
 }

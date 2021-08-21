@@ -84,6 +84,14 @@ io.on(constants_1.SocketEvents.SERVER_CONNECTION, (socket) => {
         util_1.getRoomFromUserId(user.userId).messages.push(msg);
         socket.to(user.roomId).emit(constants_1.SocketEvents.TO_SERVER_TO_EXT_CHAT, msg);
     });
+    socket.on(constants_1.SocketEvents.TO_SERVER_ADMIN_CUR_TIME_REQ, _ => {
+        let curUser = util_1.getUserFromId(socket.id);
+        let curUserRoomAdmin = util_1.getAdminUserFromRoom(curUser.roomId);
+        socket.to(curUserRoomAdmin.userId).emit(constants_1.SocketEvents.TO_EXT_ADMIN_CUR_TIME_REQ, { triggeringUser: curUser });
+    });
+    socket.on(constants_1.SocketEvents.TO_SERVER_ADMIN_CUR_TIME_DATA, (data) => {
+        socket.to(data.userIdToSendTo).emit(constants_1.SocketEvents.TO_EXT_ADMIN_CUR_TIME_DATA, data);
+    });
     socket.on(constants_1.SocketEvents.TO_SERVER_SET_OFFSET, (offset) => {
         let user = util_1.getUserFromId(socket.id);
         user.offsetTime = offset.offsetTime;

@@ -277,9 +277,11 @@
     align-items: center;
     margin-bottom: 5px;
 }
-#floatingMenuBlock .head h4 {
+#floatingMenuBlock .head h5 {
     word-break: break-all;
     margin-left: 10px;
+    margin-bottom: 0;
+    font-size: 20px;
 }
 #floatingMenuBlock .head img {
     width: 22px;
